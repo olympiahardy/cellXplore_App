@@ -1,0 +1,24 @@
+{
+    "_index": "_index",
+    "column-order": [
+        "nCount_RNA",
+        "nFeature_RNA",
+        "log10GenesPerUMI",
+        "percent.mt",
+        "percent.ribo",
+        "S.Score",
+        "G2M.Score",
+        "pANN_0.25_0.09_1466",
+        "nCount_SCT",
+        "nFeature_SCT",
+        "Broad_Cell_Types",
+        "Cell_Subclusters",
+        "Infection_Status",
+        "Cell_Cyle",
+        "Experimental_Groups",
+        "Seurat_Clusters",
+        "Biological_Replicates"
+    ],
+    "encoding-type": "dataframe",
+    "encoding-version": "0.2.0"
+}
