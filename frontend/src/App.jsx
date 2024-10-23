@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from "react";
 import "./App.css";
 import { Vitessce } from "vitessce";
 import { Resizable } from "react-resizable";
+import "react-resizable/css/styles.css"; 
 console.log(Resizable);
 import Draggable from "react-draggable";
 console.log(Draggable);
@@ -9,8 +10,8 @@ console.log(Draggable);
 // import { vcConfig } from "./my-view-config";
 const VitessceVisualization = () => {
   const [config, setConfig] = useState();
-  const [width, setWidth] = useState(500);
-  const [height, setHeight] = useState(500);
+  const [width, setWidth] = useState(800);
+  const [height, setHeight] = useState(800);
   const resizableRef = useRef(null);
 
   useEffect(() => {
@@ -38,24 +39,22 @@ const VitessceVisualization = () => {
 
   return (
     <Draggable handle=".handle">
-      <div
-        className="handle"
-        style={{ border: "1px solid #ccc", padding: "10px", cursor: "move" }}
-      >
+      <div style={{ border: "1px solid #ccc", padding: "10px", position: "relative" }}>
+        {/* This handle will be draggable */}
+        <div className="handle" style={{ cursor: "move", backgroundColor: "#eee", padding: "10px", marginBottom: "10px" }}>
+          Drag here
+        </div>
+
+        {/* The Resizable section below remains unaffected by the drag */}
         <Resizable
           width={width}
           height={height}
           onResize={onResize}
-          minConstraints={[300, 300]} // Minimum dimensions
-          maxConstraints={[1000, 1000]} // Optional max dimensions
+          minConstraints={[300, 300]} // Optional min size
+          maxConstraints={[1200, 1200]} // Optional max size
         >
-          <div
-            style={{
-              width: `${width}px`,
-              height: `${height}px`,
-              overflow: "hidden",
-            }}
-          >
+          <div style={{ width: `${width}px`, height: `${height}px`, overflow: "hidden" }}>
+            {/* Vitessce component with dynamic width and height */}
             <Vitessce
               config={config}
               width={width}
