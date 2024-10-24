@@ -7,7 +7,7 @@ from flask_cors import CORS
 from pprint import pprint
 
 # import zarr
-from vitessce import VitessceConfig, AnnDataWrapper
+from vitessce import VitessceConfig, AnnDataWrapper, ViewType as vt, SpatialDataWrapper, hconcat
 
 # This initialises the application
 app = Flask(__name__)
@@ -21,21 +21,31 @@ def create_vitessce_config(zarr_file_path, config_name, dataset_name):
 
     # This will create a Vitessce object that will define what data we extract and what views we can plot
     vc = VitessceConfig(name=config_name, schema_version="1.0.15", base_dir=BASE_DIR)
-    pprint(dir(vc))
     # This will define our Zarr dataset and will wrap the file into our Vitessce object
-    dataset = vc.add_dataset(name=dataset_name).add_object(AnnDataWrapper(zarr_file_path,
-                                                                          obs_embedding_paths=["obsm/X_umap"],
-                                                                          obs_embedding_names=["UMAP"],
-                                                                          obs_set_paths=["obs/Seurat_Clusters"],
-                                                                          obs_set_names=["Cell Type"],
-                                                                          obs_feature_matrix_path="X"
-                                                                          )
-                                                                          )
+    dataset = vc.add_dataset(name=dataset_name).add_object(
+        AnnDataWrapper(
+            zarr_file_path,
+            obs_embedding_paths=["obsm/X_umap"],          # UMAP embeddings
+            obs_embedding_names=["UMAP"],
+            obs_set_paths=["obs/clusters"],               # Cluster labels
+            obs_set_names=["clusters"],
+            obs_feature_matrix_path="X",                  # Feature matrix
+            #obs_spots_path="obsm/spatial",                # Spatial coordinates
+            #spatial_image_layer="hires",                  # The resolution layer to use
+            #spatial_image_path="uns/spatial/Naive_1/images/hires",  # Updated path for hires image
+            #spatial_image_key="Naive_1"                   # Corresponding key for the image
+        )
+    )
+    pprint("LOOOOOK HERE!!!!!")
+    pprint(dataset)
+
+    #spatial_view = vc.add_view(vt.SPATIAL, dataset = dataset, mapping="spatial")
+    umap_view = vc.add_view(dataset = dataset, view_type='scatterplot', mapping="UMAP")
 
     # Here we define what plots and views we want to visualise
-    vc.layout(vc.add_view(view_type="scatterplot", dataset=dataset, mapping='UMAP'))
-    
+    #vc.layout(hconcat(spatial_view, umap_view))
+    vc.layout(umap_view)
     # Exports the Vitessce config file to a JSON format to your API endpoint in main.py
-
+    pprint(vc)
     return vc.to_dict(base_url='http://127.0.0.1:5000/datasets')
 

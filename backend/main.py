@@ -10,11 +10,10 @@ import pprint as pprint
 # This fetches the adata that is constructed as a vc visualisation and returns it as a json that the frontend can handle 
 
 def get_anndata_config():
-    data_path = "tbrucei_brain.zarr"
+    data_path = "tbrucei_brain_spatial.zarr"
     config_name = "10X Visium Murine Brain T.brucei Infection"
     dataset_name = "T.brucei infection"
     config = create_vitessce_config(data_path, config_name, dataset_name)
-
     return jsonify(config)
 
 
@@ -22,6 +21,18 @@ def get_anndata_config():
 def send_report(path):
     print(f'/datasets: {path}')
     return send_from_directory('../datasets', path)
+
+# @app.route("/get_anndata_spatial", methods=["GET"])
+# Here we can write a function that specifies how we are handling the GET request that is sent to the above route
+# This fetches the adata that is constructed as a vc visualisation and returns it as a json that the frontend can handle 
+
+# def get_anndata_spatial_config():
+#     data_path = "tbrucei_brain_spatial.zarr"
+#     config_name = "Multiple 10X Visium Murine Brain T.brucei Infection"
+#     dataset_name = "T.brucei infection slides"
+#     config = create_vitessce_spatial_config(data_path, config_name)
+
+#     return jsonify(config)
 
 if __name__ == "__main__":
 

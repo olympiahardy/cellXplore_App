@@ -69,3 +69,5 @@ const VitessceVisualization = () => {
 };
 
 export default VitessceVisualization;
+
+// For spatial view
