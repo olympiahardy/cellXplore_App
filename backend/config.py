@@ -2,7 +2,6 @@
 # When you install python packages use python3.13 -m pip install 
 import os
 from flask import Flask
-import scanpy as sc
 from flask_cors import CORS
 from pprint import pprint
 

@@ -1,9 +1,32 @@
+from flask import Flask
 from flask import request, jsonify, send_from_directory
-from config import app, create_vitessce_config
-import pprint as pprint
+from config import create_vitessce_config
 
+import zarr
+from pprint import pprint
+import pandas as pd
+
+
+app = Flask(__name__)
+zarr_cache = None 
 # So this creates a new route, defines a new endpoint for the route and also contains a decorator
 # This means that we only want to use the GET method for this particular URL
+
+# # Path to your Zarr file
+ZARR_PATH = "/Users/olympia/cellXplore_App/datasets/tbrucei_brain_spatial.zarr"
+zarr_cache = zarr.open(ZARR_PATH)
+
+@app.route('/filtered_metadata', methods=['GET'])
+def get_filtered_metadata():
+    # Access cached AnnData object
+    global zarr_cache
+    # Access the DataFrame from 'uns'
+    cellchat_df = pd.DataFrame(zarr_cache['uns']['Cellchat_Interactions'])
+    pprint(cellchat_df)
+    # Convert DataFrame to JSON
+    data = cellchat_df.to_json(orient='split')  # 'split' format for easier frontend parsing
+    return jsonify(data)
+
 
 @app.route("/get_anndata", methods=["GET"])
 # Here we can write a function that specifies how we are handling the GET request that is sent to the above route
@@ -35,5 +58,4 @@ def send_report(path):
 #     return jsonify(config)
 
 if __name__ == "__main__":
-
     app.run(debug=True)
