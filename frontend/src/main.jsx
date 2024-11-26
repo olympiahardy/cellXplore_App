@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import VitessceVisualization from "./App.jsx";
+import VitessceVisualization from "./VitessceVisualisation.jsx";
 import InteractionDataTable from "./Table.jsx";
 import "./index.css";
 
