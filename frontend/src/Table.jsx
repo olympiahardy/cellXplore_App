@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useTable } from "react-table";
-import Draggable from "react-draggable";
 import "./App.css"; // Make sure to include your CSS file
 
 function InteractionDataTable() {
@@ -60,83 +59,76 @@ function InteractionDataTable() {
   }
 
   return (
-    <Draggable handle=".handle">
+    <div
+      style={{
+        width: "90%", // Adjust the width to fit your needs
+        border: "1px solid #ccc",
+        padding: "10px",
+        borderRadius: "8px",
+        position: "fixed", // Keep it fixed to the bottom left as per your requirement
+        bottom: 0,
+        left: 0,
+      }}
+    >
       <div
+        className="handle"
         style={{
-          width: "90%", // Adjust the width to fit your needs
-          border: "1px solid #ccc",
-          padding: "10px",
-          borderRadius: "8px",
-          //backgroundColor: "#f9f9f9",
-          position: "relative",
+          padding: "8px",
+          borderRadius: "4px",
+          textAlign: "center",
+          marginBottom: "10px",
         }}
       >
-        <div
-          className="handle"
-          style={{
-            cursor: "move",
-            //backgroundColor: "#ddd",
-            padding: "8px",
-            borderRadius: "4px",
-            textAlign: "center",
-            marginBottom: "10px",
-          }}
+        Table Header
+      </div>
+      <div style={{ maxHeight: "200px", overflow: "auto" }}>
+        <table
+          {...getTableProps()}
+          style={{ width: "100%", borderCollapse: "collapse" }}
         >
-          Drag here
-        </div>
-        <div style={{ maxHeight: "400px", overflow: "auto" }}>
-          <table
-            {...getTableProps()}
-            style={{ width: "100%", borderCollapse: "collapse" }}
-          >
-            <thead>
-              {headerGroups.map((headerGroup, headerGroupIndex) => (
-                <tr
-                  {...headerGroup.getHeaderGroupProps()}
-                  key={headerGroupIndex}
-                >
-                  {headerGroup.headers.map((column, columnIndex) => (
-                    <th
-                      {...column.getHeaderProps()}
-                      key={columnIndex}
+          <thead>
+            {headerGroups.map((headerGroup, headerGroupIndex) => (
+              <tr {...headerGroup.getHeaderGroupProps()} key={headerGroupIndex}>
+                {headerGroup.headers.map((column, columnIndex) => (
+                  <th
+                    {...column.getHeaderProps()}
+                    key={columnIndex}
+                    style={{
+                      padding: "10px",
+                      borderBottom: "1px solid #ddd",
+                    }}
+                  >
+                    {column.render("Header")}
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+          <tbody {...getTableBodyProps()}>
+            {rows.map((row, rowIndex) => {
+              prepareRow(row);
+              return (
+                <tr {...row.getRowProps()} key={rowIndex}>
+                  {row.cells.map((cell, cellIndex) => (
+                    <td
+                      {...cell.getCellProps()}
+                      key={cellIndex}
                       style={{
-                        padding: "10px",
-                        borderBottom: "1px solid #ddd",
-                        //backgroundColor: "#f1f1f1",
+                        padding: "8px",
+                        borderBottom: "1px solid #eee",
+                        textAlign: "left",
                       }}
                     >
-                      {column.render("Header")}
-                    </th>
+                      {cell.render("Cell")}
+                    </td>
                   ))}
                 </tr>
-              ))}
-            </thead>
-            <tbody {...getTableBodyProps()}>
-              {rows.map((row, rowIndex) => {
-                prepareRow(row);
-                return (
-                  <tr {...row.getRowProps()} key={rowIndex}>
-                    {row.cells.map((cell, cellIndex) => (
-                      <td
-                        {...cell.getCellProps()}
-                        key={cellIndex}
-                        style={{
-                          padding: "8px",
-                          borderBottom: "1px solid #eee",
-                          textAlign: "left",
-                        }}
-                      >
-                        {cell.render("Cell")}
-                      </td>
-                    ))}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
-    </Draggable>
+    </div>
   );
 }
 

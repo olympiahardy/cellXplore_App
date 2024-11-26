@@ -1,6 +1,6 @@
 from flask import Flask, Response
 from flask import request, jsonify, send_from_directory, abort
-from vitessce import VitessceConfig
+from config import create_vitessce_config
 import anndata as ad
 from flask_cors import CORS
 import traceback
@@ -66,16 +66,10 @@ def get_data_table():
 # This fetches the adata that is constructed as a vc visualisation and returns it as a json that the frontend can handle 
 
 def get_anndata_config():
-    # Load the YAML configuration
-    with open('./yamls/tbrucei_brain.yaml', 'r') as file:
-        config_dict = yaml.safe_load(file)
-
-    # Create a VitessceConfig object from the dictionary
-    vc = VitessceConfig.from_dict(config_dict)
-
-    # Convert to a Vitessce JSON config if needed
-    config = vc.to_dict(base_url='http://127.0.0.1:5000/datasets')
-
+    data_path = "tbrucei_brain_spatial.zarr"
+    config_name = "10X Visium Murine Brain T.brucei Infection"
+    dataset_name = "T.brucei infection"
+    config = create_vitessce_config(data_path, config_name, dataset_name)
     return jsonify(config)
 
 

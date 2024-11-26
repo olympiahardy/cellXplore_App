@@ -1,14 +1,10 @@
 import React, { useRef, useEffect, useState } from "react";
 import { Vitessce } from "vitessce";
-import { Resizable } from "react-resizable";
-import "react-resizable/css/styles.css";
-import Draggable from "react-draggable";
 
 const VitessceVisualization = () => {
   const [config, setConfig] = useState();
-  const [width, setWidth] = useState(200);
-  const [height, setHeight] = useState(200);
-  const resizableRef = useRef(null);
+  const [width] = useState(400); // Set initial desired width
+  const [height] = useState(400); // Set initial desired height
 
   useEffect(() => {
     fetchConfig();
@@ -27,65 +23,38 @@ const VitessceVisualization = () => {
     }
   };
 
-  const onResize = (event, { size }) => {
-    setWidth(size.width);
-    setHeight(size.height);
-  };
-
   if (!config) return <div>Loading...</div>;
 
   return (
-    <Draggable handle=".handle">
+    <div
+      style={{
+        border: "1px solid #ccc",
+        padding: "10px",
+        position: "absolute",
+        right: "0",
+        top: "0",
+        margin: "10px",
+        zIndex: 1000,
+        width: `${width}px`,
+        height: `${height}px`,
+        overflow: "hidden",
+        backgroundColor: "#fff",
+      }}
+    >
+      {/* Header section */}
       <div
         style={{
-          border: "1px solid #ccc",
+          backgroundColor: "#eee",
           padding: "10px",
-          position: "absolute",
-          right: "0",
-          top: "0",
-          margin: "10px",
-          zIndex: 1000,
+          marginBottom: "10px",
         }}
       >
-        {/* This handle will be draggable */}
-        <div
-          className="handle"
-          style={{
-            cursor: "move",
-            backgroundColor: "#eee",
-            padding: "10px",
-            marginBottom: "10px",
-          }}
-        >
-          Drag here
-        </div>
-
-        {/* The Resizable section below remains unaffected by the drag */}
-        <Resizable
-          width={width}
-          height={height}
-          onResize={onResize}
-          minConstraints={[300, 300]}
-          maxConstraints={[1200, 1200]}
-        >
-          <div
-            style={{
-              width: `${width}px`,
-              height: `${height}px`,
-              overflow: "hidden",
-            }}
-          >
-            {/* Vitessce component with dynamic width and height */}
-            <Vitessce
-              config={config}
-              width={width}
-              height={height}
-              theme="dark"
-            />
-          </div>
-        </Resizable>
+        Header
       </div>
-    </Draggable>
+
+      {/* Vitessce component */}
+      <Vitessce config={config} width={width} height={height} theme="dark" />
+    </div>
   );
 };
 
