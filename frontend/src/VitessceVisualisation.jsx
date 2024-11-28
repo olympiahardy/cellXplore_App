@@ -3,8 +3,8 @@ import { Vitessce } from "vitessce";
 
 const VitessceVisualization = () => {
   const [config, setConfig] = useState();
-  const [width] = useState(400); // Set initial desired width
-  const [height] = useState(400); // Set initial desired height
+  const [width] = useState(500); // Set initial desired width
+  const [height] = useState(600); // Set initial desired height
 
   useEffect(() => {
     fetchConfig();
@@ -30,26 +30,26 @@ const VitessceVisualization = () => {
       style={{
         border: "1px solid #ccc",
         padding: "10px",
-        position: "absolute",
-        right: "0",
+        position: "fixed",
+        left: "0",
         top: "0",
         margin: "10px",
         zIndex: 1000,
         width: `${width}px`,
         height: `${height}px`,
         overflow: "hidden",
-        backgroundColor: "#fff",
+        //backgroundColor: "#fff",
       }}
     >
       {/* Header section */}
       <div
         style={{
-          backgroundColor: "#eee",
-          padding: "10px",
-          marginBottom: "10px",
+          //backgroundColor: "#eee",
+          padding: "1px",
+          marginBottom: "1px",
         }}
       >
-        Header
+        UMAP View
       </div>
 
       {/* Vitessce component */}

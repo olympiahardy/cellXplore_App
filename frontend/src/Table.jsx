@@ -67,7 +67,7 @@ function InteractionDataTable() {
         borderRadius: "8px",
         position: "fixed", // Keep it fixed to the bottom left as per your requirement
         bottom: 0,
-        left: 0,
+        left: 100,
       }}
     >
       <div
@@ -79,9 +79,9 @@ function InteractionDataTable() {
           marginBottom: "10px",
         }}
       >
-        Table Header
+        Interaction Table
       </div>
-      <div style={{ maxHeight: "200px", overflow: "auto" }}>
+      <div style={{ maxHeight: "300px", overflow: "auto" }}>
         <table
           {...getTableProps()}
           style={{ width: "100%", borderCollapse: "collapse" }}

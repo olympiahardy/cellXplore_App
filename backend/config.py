@@ -18,8 +18,8 @@ def create_vitessce_config(zarr_file_path, config_name, dataset_name):
         dataset = vc.add_dataset(name=dataset_name).add_object(AnnDataWrapper(zarr_file_path,
                                                                           obs_embedding_paths=["obsm/X_umap"],
                                                                           obs_embedding_names=["UMAP"],
-                                                                          obs_set_paths=["obs/clusters"],
-                                                                          obs_set_names=["Cell Type"],
+                                                                          obs_set_paths=["obs/clusters", "obs/library_id"],
+                                                                          obs_set_names=["Cell Type", "Sample"],
                                                                           obs_feature_matrix_path="X"
                                                                           )
                                                                           )

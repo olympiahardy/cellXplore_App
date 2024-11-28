@@ -33,11 +33,11 @@ def get_data_table():
                 # Access the DataFrame in the `.uns` slot
                 if 'Cellchat_Interactions' in zarr_cache.uns:
                     df = zarr_cache.uns['Cellchat_Interactions']
-                    print("DataFrame accessed:", df)
+                    #print("DataFrame accessed:", df)
                     
                     # Convert the DataFrame to JSON format
                     data = df.to_json(orient='records')
-                    print("Data converted to JSON format:", data)
+                    #print("Data converted to JSON format:", data)
                 else:
                     print("Key 'Cellchat_Interactions' not found in zarr_cache")
                     data = []  # Return an empty array if the key is not found
@@ -50,7 +50,7 @@ def get_data_table():
             data = []  # Return an empty array if Zarr file failed to load
 
         # Log the data type for debugging
-        print("Data type:", type(data))
+        #print("Data type:", type(data))
         
         # Return the data as JSON
         return Response(data, mimetype='application/json')
@@ -72,6 +72,11 @@ def get_anndata_config():
     config = create_vitessce_config(data_path, config_name, dataset_name)
     return jsonify(config)
 
+# Here we are going to make a function to create a heatmap of interaction counts
+
+
+
+
 
 @app.route('/datasets/<path:path>', methods=["GET"])
 def send_report(path):
@@ -81,7 +86,21 @@ def send_report(path):
     if path == 'tbrucei_brain_spatial.zarr/var/.zarray':
         # Redirect to the correct file location
         path = 'tbrucei_brain_spatial.zarr/var/_index/.zarray'
+
+    # Check if the requested path is the missing .zarray file for obs
+    if path == 'tbrucei_brain_spatial.zarr/obs/.zarray':
+        # Redirect to the correct file location for obs
+        path = 'tbrucei_brain_spatial.zarr/obs/_index/.zarray'
     
+    # Check if the requested path is the missing .zarray file for obs
+    if path == 'tbrucei_brain_spatial.zarr/obs/clusters/.zarray':
+        # Redirect to the correct file location for obs
+        path = 'tbrucei_brain_spatial.zarr/obs/clusters/categories/.zarray'
+
+    # Check if the requested path is the missing .zarray file for obs
+    if path == 'tbrucei_brain_spatial.zarr/obs/library_id/.zarray':
+        # Redirect to the correct file location for obs
+        path = 'tbrucei_brain_spatial.zarr/obs/library_id/categories/.zarray'
     try:
         # Send the file from the datasets directory
         return send_from_directory('../datasets', path)
