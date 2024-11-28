@@ -5,8 +5,11 @@ import anndata as ad
 from flask_cors import CORS
 import traceback
 from pprint import pprint
+import dash
+from dash import dcc, html
+import plotly.express as px
 import pandas as pd
-import yaml
+import plotly.graph_objects as go
 
 
 app = Flask(__name__)
@@ -73,9 +76,45 @@ def get_anndata_config():
     return jsonify(config)
 
 # Here we are going to make a function to create a heatmap of interaction counts
+@app.route('/get_cellchat_data', methods=['GET'])
+def get_cellchat_data():
+    try:
+        # Ensure the global variable is being accessed
+        global zarr_cache
+        # Convert the Cellchat_Interactions data from uns to a DataFrame
+        if zarr_cache is not None and 'Cellchat_Interactions' in zarr_cache.uns:
+            df = zarr_cache.uns['Cellchat_Interactions']
+            # Convert the DataFrame to JSON format (ensure 'source' and 'target' columns exist)
+            data = df[['source', 'target']].to_json(orient='records')
+            # Return the data as JSON response
+            return Response(data, mimetype='application/json')
+        else:
+            return jsonify({"error": "'Cellchat_Interactions' not found in the specified Zarr file."}), 500
+    except KeyError as ke:
+        print(f"KeyError: {ke}")
+        return jsonify({"error": str(ke)}), 500
+    except Exception as e:
+        print("Error accessing Cellchat_Interactions data:", str(e))
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+    
 
-
-
+@app.route('/get_cellchat_bubble', methods=['GET'])
+def get_cellchat_bubble():
+    try:
+        # Access the DataFrame in the `.uns` slot
+        if 'Cellchat_Interactions' in zarr_cache.uns:
+            df = zarr_cache.uns['Cellchat_Interactions']
+            # Ensure the DataFrame contains the required columns
+            required_columns = ['source', 'target', 'pval', 'prob', 'interaction_name_2', 'Interacting_Pair']
+            if not all(col in df.columns for col in required_columns):
+                return jsonify({"error": f"Missing required columns in DataFrame."}), 500
+            # Convert the DataFrame to JSON format
+            return jsonify(df.to_dict(orient='records'))
+        else:
+            return jsonify({"error": "'Cellchat_Interactions' not found in the specified Zarr file."}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route('/datasets/<path:path>', methods=["GET"])

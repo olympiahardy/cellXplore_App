@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useTable } from "react-table";
+import { useTable, useSortBy, useGlobalFilter } from "react-table";
 import "./App.css"; // Make sure to include your CSS file
 
 function InteractionDataTable() {
@@ -46,9 +46,15 @@ function InteractionDataTable() {
       : [];
   }, [data]);
 
-  const tableInstance = useTable({ columns, data });
-  const { getTableProps, getTableBodyProps, headerGroups, rows, prepareRow } =
-    tableInstance;
+  const {
+    getTableProps,
+    getTableBodyProps,
+    headerGroups,
+    rows,
+    prepareRow,
+    setGlobalFilter,
+    state,
+  } = useTable({ columns, data }, useGlobalFilter, useSortBy);
 
   if (loading) {
     return <p>Loading data...</p>;
@@ -61,44 +67,80 @@ function InteractionDataTable() {
   return (
     <div
       style={{
-        width: "90%", // Adjust the width to fit your needs
-        border: "1px solid #ccc",
+        width: "50%", // Adjust the width to fit your needs
+        border: "1px solid #333",
         padding: "10px",
         borderRadius: "8px",
-        position: "fixed", // Keep it fixed to the bottom left as per your requirement
+        position: "fixed",
         bottom: 0,
-        left: 100,
+        left: 0,
+        backgroundColor: "#1e1e1e", // Dark gray background for dark theme
+        color: "white", // White text for dark theme
+        boxShadow: "0px 0px 10px rgba(255, 255, 255, 0.2)",
       }}
     >
       <div
-        className="handle"
         style={{
           padding: "8px",
           borderRadius: "4px",
           textAlign: "center",
           marginBottom: "10px",
+          fontWeight: "bold",
         }}
       >
         Interaction Table
       </div>
+      
+      {/* Search bar for filtering table */}
+      <input
+        type="text"
+        value={state.globalFilter || ""}
+        onChange={(e) => setGlobalFilter(e.target.value)}
+        placeholder="Search for a cell type or interaction..."
+        style={{
+          width: "90%",
+          padding: "8px",
+          borderRadius: "4px",
+          marginBottom: "10px",
+          border: "1px solid #555",
+          backgroundColor: "#333",
+          color: "white",
+        }}
+      />
+
       <div style={{ maxHeight: "300px", overflow: "auto" }}>
         <table
           {...getTableProps()}
-          style={{ width: "100%", borderCollapse: "collapse" }}
+          style={{
+            width: "100%",
+            borderCollapse: "collapse",
+            color: "white", // White text color for dark theme
+          }}
         >
           <thead>
             {headerGroups.map((headerGroup, headerGroupIndex) => (
               <tr {...headerGroup.getHeaderGroupProps()} key={headerGroupIndex}>
                 {headerGroup.headers.map((column, columnIndex) => (
                   <th
-                    {...column.getHeaderProps()}
+                    {...column.getHeaderProps(column.getSortByToggleProps())}
                     key={columnIndex}
                     style={{
                       padding: "10px",
-                      borderBottom: "1px solid #ddd",
+                      borderBottom: "1px solid #555",
+                      backgroundColor: "#333", // Darker header background for dark theme
+                      cursor: "pointer",
+                      userSelect: "none", // Prevent text selection while sorting
                     }}
                   >
                     {column.render("Header")}
+                    {/* Add sorting indicator */}
+                    <span>
+                      {column.isSorted
+                        ? column.isSortedDesc
+                          ? " 🔽"
+                          : " 🔼"
+                        : ""}
+                    </span>
                   </th>
                 ))}
               </tr>
@@ -115,7 +157,7 @@ function InteractionDataTable() {
                       key={cellIndex}
                       style={{
                         padding: "8px",
-                        borderBottom: "1px solid #eee",
+                        borderBottom: "1px solid #444",
                         textAlign: "left",
                       }}
                     >
