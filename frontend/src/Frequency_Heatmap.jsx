@@ -34,7 +34,12 @@ const FrequencyHeatmap = () => {
         const df = await response.json();
 
         // Extract unique sources and targets
-        const labels = [...new Set([...df.map((item) => item.source), ...df.map((item) => item.target)])].sort();
+        const labels = [
+          ...new Set([
+            ...df.map((item) => item.source),
+            ...df.map((item) => item.target),
+          ]),
+        ].sort();
 
         setUniqueLabels(labels);
 
@@ -52,7 +57,9 @@ const FrequencyHeatmap = () => {
 
   // Function to handle label selection change
   const handleLabelChange = (selectedOptions) => {
-    setSelectedLabels(selectedOptions ? selectedOptions.map((option) => option.value) : []);
+    setSelectedLabels(
+      selectedOptions ? selectedOptions.map((option) => option.value) : []
+    );
   };
 
   // Function to handle color scheme change
@@ -96,9 +103,11 @@ const FrequencyHeatmap = () => {
       }}
     >
       <div style={{ width: "20%", paddingRight: "10px" }}>
-        <h4 style={{ color: "white" }}>Customize Heatmap</h4>
+        <h4 style={{ color: "white" }}>Customise Heatmap</h4>
         <div style={{ marginBottom: "10px" }}>
-          <label htmlFor="label-select" style={{ color: "white" }}>Cell Types: </label>
+          <label htmlFor="label-select" style={{ color: "white" }}>
+            Cell Types:{" "}
+          </label>
           <Select
             id="label-select"
             isMulti
@@ -133,12 +142,14 @@ const FrequencyHeatmap = () => {
           />
         </div>
         <div style={{ marginBottom: "10px" }}>
-          <label htmlFor="color-select" style={{ color: "white" }}>Color Scheme: </label>
+          <label htmlFor="color-select" style={{ color: "white" }}>
+            Colour Scheme:{" "}
+          </label>
           <Select
             id="color-select"
             options={colorSchemes}
             onChange={handleColorSchemeChange}
-            placeholder="Select color scheme..."
+            placeholder="Select colour scheme..."
             styles={{
               control: (provided) => ({
                 ...provided,
@@ -173,7 +184,7 @@ const FrequencyHeatmap = () => {
           ]}
           layout={{
             title: {
-              text: "Source-Target Interaction Frequency Heatmap",
+              text: "Interaction Frequency Heatmap",
               x: 0.5,
               xanchor: "center",
               y: 0.95,

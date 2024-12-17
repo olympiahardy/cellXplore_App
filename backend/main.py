@@ -26,7 +26,7 @@ def load_cached_zarr():
 
 # Load the Zarr file when the application starts
 load_cached_zarr()
-
+pprint(zarr_cache)
 @app.route('/data-table', methods=['GET'])
 def get_data_table():
     try:
@@ -34,9 +34,9 @@ def get_data_table():
         if zarr_cache is not None:
             try:
                 # Access the DataFrame in the `.uns` slot
-                if 'Cellchat_Interactions' in zarr_cache.uns:
-                    df = zarr_cache.uns['Cellchat_Interactions']
-                    #print("DataFrame accessed:", df)
+                if 'Cellchat_Interactions' in zarr_cache.uns["Interactions"]:
+                    df = zarr_cache.uns["Interactions"]['Cellchat_Interactions']
+                    print("DataFrame accessed:", df)
                     
                     # Convert the DataFrame to JSON format
                     data = df.to_json(orient='records')
@@ -72,7 +72,7 @@ def get_anndata_config():
     data_path = "tbrucei_brain_spatial.zarr"
     config_name = "10X Visium Murine Brain T.brucei Infection"
     dataset_name = "T.brucei infection"
-    config = create_vitessce_config(data_path, config_name, dataset_name)
+    config = create_vitessce_config(data_path, config_name, dataset_name, zarr_cache)
     return jsonify(config)
 
 # Here we are going to make a function to create a heatmap of interaction counts
@@ -82,8 +82,8 @@ def get_cellchat_data():
         # Ensure the global variable is being accessed
         global zarr_cache
         # Convert the Cellchat_Interactions data from uns to a DataFrame
-        if zarr_cache is not None and 'Cellchat_Interactions' in zarr_cache.uns:
-            df = zarr_cache.uns['Cellchat_Interactions']
+        if zarr_cache is not None and 'Cellchat_Interactions' in zarr_cache.uns["Interactions"]:
+            df = zarr_cache.uns["Interactions"]['Cellchat_Interactions']
             # Convert the DataFrame to JSON format (ensure 'source' and 'target' columns exist)
             data = df[['source', 'target']].to_json(orient='records')
             # Return the data as JSON response
@@ -103,8 +103,8 @@ def get_cellchat_data():
 def get_cellchat_bubble():
     try:
         # Access the DataFrame in the `.uns` slot
-        if 'Cellchat_Interactions' in zarr_cache.uns:
-            df = zarr_cache.uns['Cellchat_Interactions']
+        if 'Cellchat_Interactions' in zarr_cache.uns["Interactions"]:
+            df = zarr_cache.uns["Interactions"]['Cellchat_Interactions']
             # Ensure the DataFrame contains the required columns
             required_columns = ['source', 'target', 'pval', 'prob', 'interaction_name_2', 'Interacting_Pair']
             if not all(col in df.columns for col in required_columns):

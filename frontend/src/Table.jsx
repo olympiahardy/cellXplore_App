@@ -73,7 +73,7 @@ function InteractionDataTable() {
         borderRadius: "8px",
         position: "fixed",
         bottom: 0,
-        left: 0,
+        left: "10px",
         backgroundColor: "#1e1e1e", // Dark gray background for dark theme
         color: "white", // White text for dark theme
         boxShadow: "0px 0px 10px rgba(255, 255, 255, 0.2)",
@@ -90,7 +90,7 @@ function InteractionDataTable() {
       >
         Interaction Table
       </div>
-      
+
       {/* Search bar for filtering table */}
       <input
         type="text"

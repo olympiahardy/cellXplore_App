@@ -29,7 +29,9 @@ const InteractiveBubblePlot = () => {
     // Fetch data from the Flask backend at /get_cellchat_bubble endpoint
     const fetchData = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:5000/get_cellchat_bubble");
+        const response = await fetch(
+          "http://127.0.0.1:5000/get_cellchat_bubble"
+        );
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
@@ -66,12 +68,16 @@ const InteractiveBubblePlot = () => {
 
   // Function to handle source selection change
   const handleSourceChange = (selectedOptions) => {
-    setSelectedSources(selectedOptions ? selectedOptions.map((option) => option.value) : []);
+    setSelectedSources(
+      selectedOptions ? selectedOptions.map((option) => option.value) : []
+    );
   };
 
   // Function to handle target selection change
   const handleTargetChange = (selectedOptions) => {
-    setSelectedTargets(selectedOptions ? selectedOptions.map((option) => option.value) : []);
+    setSelectedTargets(
+      selectedOptions ? selectedOptions.map((option) => option.value) : []
+    );
   };
 
   // Function to handle color scheme change
@@ -87,7 +93,9 @@ const InteractiveBubblePlot = () => {
   );
 
   // Extract pval values for dynamic scaling
-  const pvals = filteredData.map((item) => item.pval !== undefined ? item.pval : 0.01);
+  const pvals = filteredData.map((item) =>
+    item.pval !== undefined ? item.pval : 0.01
+  );
   const minPval = Math.min(...pvals);
   const maxPval = Math.max(...pvals);
 
@@ -124,9 +132,11 @@ const InteractiveBubblePlot = () => {
       }}
     >
       <div style={{ width: "20%", paddingRight: "10px" }}>
-        <h4 style={{ color: "white" }}>Customize Bubble Plot</h4>
+        <h4 style={{ color: "white" }}>Customise Bubble Plot</h4>
         <div style={{ marginBottom: "10px" }}>
-          <label htmlFor="source-select" style={{ color: "white" }}>Sources: </label>
+          <label htmlFor="source-select" style={{ color: "white" }}>
+            Sources:{" "}
+          </label>
           <Select
             id="source-select"
             isMulti
@@ -158,7 +168,9 @@ const InteractiveBubblePlot = () => {
           />
         </div>
         <div style={{ marginBottom: "10px" }}>
-          <label htmlFor="target-select" style={{ color: "white" }}>Targets: </label>
+          <label htmlFor="target-select" style={{ color: "white" }}>
+            Targets:{" "}
+          </label>
           <Select
             id="target-select"
             isMulti
@@ -190,12 +202,14 @@ const InteractiveBubblePlot = () => {
           />
         </div>
         <div style={{ marginBottom: "10px" }}>
-          <label htmlFor="color-select" style={{ color: "white" }}>Color Scheme: </label>
+          <label htmlFor="color-select" style={{ color: "white" }}>
+            Colour Scheme:{" "}
+          </label>
           <Select
             id="color-select"
             options={colorSchemes}
             onChange={handleColorSchemeChange}
-            placeholder="Select color scheme..."
+            placeholder="Select colour scheme..."
             styles={{
               control: (provided) => ({
                 ...provided,
@@ -219,66 +233,75 @@ const InteractiveBubblePlot = () => {
 
       <div style={{ width: "80%" }}>
         {/* Show message if there are no interactions found for the selected combination */}
-        {selectedSources.length > 0 && selectedTargets.length > 0 && filteredData.length === 0 && (
-          <div style={{ marginTop: "20px", color: "red" }}>
-            No interactions found for the selected source and target combination.
-          </div>
-        )}
+        {selectedSources.length > 0 &&
+          selectedTargets.length > 0 &&
+          filteredData.length === 0 && (
+            <div style={{ marginTop: "20px", color: "red" }}>
+              No interactions found for the selected source and target
+              combination.
+            </div>
+          )}
 
         {/* Plot only if there are selected sources and targets and data is available */}
-        {selectedSources.length > 0 && selectedTargets.length > 0 && filteredData.length > 0 && (
-          <Plot
-            data={[
-              {
-                x: filteredData.map((item) => item.Interacting_Pair),
-                y: filteredData.map((item) => item.interaction_name_2),
-                text: filteredData.map((item) => `pval: ${item.pval || 0.01}, prob: ${item.prob || 0}`),
-                mode: "markers",
-                marker: {
-                  size: bubbleSizes,
-                  sizemode: "area",
-                  color: bubbleColors,
-                  colorscale: colorScheme, // Apply selected color scheme
-                  showscale: true, // Show color scale legend
+        {selectedSources.length > 0 &&
+          selectedTargets.length > 0 &&
+          filteredData.length > 0 && (
+            <Plot
+              data={[
+                {
+                  x: filteredData.map((item) => item.Interacting_Pair),
+                  y: filteredData.map((item) => item.interaction_name_2),
+                  text: filteredData.map(
+                    (item) =>
+                      `pval: ${item.pval || 0.01}, prob: ${item.prob || 0}`
+                  ),
+                  mode: "markers",
+                  marker: {
+                    size: bubbleSizes,
+                    sizemode: "area",
+                    color: bubbleColors,
+                    colorscale: colorScheme, // Apply selected color scheme
+                    showscale: true, // Show color scale legend
+                  },
+                  type: "scatter",
                 },
-                type: "scatter",
-              },
-            ]}
-            layout={{
-              title: "Interactive Bubble Plot for Selected Sources and Targets",
-              paper_bgcolor: "black", // Set background color to black
-              plot_bgcolor: "black", // Set the plot area background color to black
-              font: {
-                color: "white", // Set font color to white for all texts
-              },
-              xaxis: {
-                title: "Interacting Pair",
-                tickangle: -45, // Rotate x-axis labels by 45 degrees
-                automargin: true, // Enable automargin for better label visibility
-                categoryorder: "total descending", // Ensure consistent ordering
-                categorygap: 0.01, // Reduce spacing between x-axis categories
-                tickfont: { color: "white" }, // Set x-axis labels color to white
-                titlefont: { color: "white" }, // Set x-axis title color to white
-              },
-              yaxis: {
-                title: "Interaction Name",
-                automargin: true, // Enable automargin for y-axis
-                titlefont: { size: 14, color: "white" }, // Set a reasonable font size and color for the y-axis title
-                tickfont: { size: 10, color: "white" }, // Set y-axis labels color to white
-              },
-              margin: {
-                l: 70, // Adjust left margin to fit the content well
-                r: 20,
-                t: 50,
-                b: 70,
-              },
-              height: "100%",
-              width: "100%", // Set the layout width and height to 100% of the parent div
-            }}
-            useResizeHandler={true} // Use resize handler to ensure the plot fits dynamically
-            style={{ width: "100%", height: "100%" }} // Set style to make sure the plot fills the div
-          />
-        )}
+              ]}
+              layout={{
+                title:
+                  "Interactive Bubble Plot for Selected Sources and Targets",
+                paper_bgcolor: "black", // Set background color to black
+                plot_bgcolor: "black", // Set the plot area background color to black
+                font: {
+                  color: "white", // Set font color to white for all texts
+                },
+                xaxis: {
+                  title: "Interacting Pair",
+                  tickangle: -45, // Rotate x-axis labels by 45 degrees
+                  automargin: true, // Enable automargin for better label visibility
+                  categoryorder: "total descending", // Ensure consistent ordering
+                  categorygap: 0.01, // Reduce spacing between x-axis categories
+                  tickfont: { color: "white" }, // Set x-axis labels color to white
+                  titlefont: { color: "white" }, // Set x-axis title color to white
+                },
+                yaxis: {
+                  title: "Interaction Name",
+                  automargin: true, // Enable automargin for y-axis
+                  titlefont: { size: 14, color: "white" }, // Set a reasonable font size and color for the y-axis title
+                  tickfont: { size: 10, color: "white" }, // Set y-axis labels color to white
+                },
+                margin: {
+                  l: 70, // Adjust left margin to fit the content well
+                  r: 20,
+                  t: 50,
+                  b: 70,
+                },
+                height: "100%",
+                width: "100%", // Set the layout width and height to 100% of the parent div
+              }}
+              useResizeHandler={true} // Use resize handler to ensure the plot fits dynamically
+              style={{ width: "100%", height: "100%" }} // Set style to make sure the plot fills the div
+            />
+          )}
       </div>
     </div>
   );
