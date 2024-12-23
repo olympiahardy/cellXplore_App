@@ -7,9 +7,8 @@ const FrequencyHeatmap = () => {
   const [loading, setLoading] = useState(true);
   const [uniqueLabels, setUniqueLabels] = useState([]);
   const [selectedLabels, setSelectedLabels] = useState([]);
-  const [colorScheme, setColorScheme] = useState("Viridis"); // Default color scheme
+  const [colorScheme, setColorScheme] = useState("Viridis");
 
-  // Available color schemes
   const colorSchemes = [
     { value: "Viridis", label: "Viridis" },
     { value: "Cividis", label: "Cividis" },
@@ -24,7 +23,6 @@ const FrequencyHeatmap = () => {
   ];
 
   useEffect(() => {
-    // Fetch data from the Flask backend
     const fetchData = async () => {
       try {
         const response = await fetch("http://127.0.0.1:5000/get_cellchat_data");
@@ -33,7 +31,6 @@ const FrequencyHeatmap = () => {
         }
         const df = await response.json();
 
-        // Extract unique sources and targets
         const labels = [
           ...new Set([
             ...df.map((item) => item.source),
@@ -42,35 +39,29 @@ const FrequencyHeatmap = () => {
         ].sort();
 
         setUniqueLabels(labels);
-
-        // Store data for future filtering
         setData(df);
         setLoading(false);
       } catch (error) {
         console.error("Error fetching data:", error);
-        setLoading(false); // Ensure loading state is false even if there's an error
+        setLoading(false);
       }
     };
 
     fetchData();
   }, []);
 
-  // Function to handle label selection change
   const handleLabelChange = (selectedOptions) => {
     setSelectedLabels(
       selectedOptions ? selectedOptions.map((option) => option.value) : []
     );
   };
 
-  // Function to handle color scheme change
   const handleColorSchemeChange = (selectedOption) => {
     setColorScheme(selectedOption.value);
   };
 
-  // Determine labels to use for plotting based on selection
   const labelsToUse = selectedLabels.length > 0 ? selectedLabels : uniqueLabels;
 
-  // Generate frequency matrix based on selected labels
   const frequencyMap = {};
   data.forEach((item) => {
     const { source, target } = item;
@@ -90,138 +81,140 @@ const FrequencyHeatmap = () => {
     <div
       style={{
         display: "flex",
-        position: "fixed",
-        top: "10px",
-        right: "10px",
-        width: "45%", // Adjust as needed
-        height: "40%", // Adjust as needed
-        boxShadow: "0px 0px 10px rgba(255, 255, 255, 0.2)", // Light shadow for contrast on dark background
-        backgroundColor: "#1e1e1e", // Dark gray background color for dark theme
-        padding: "10px",
-        color: "white", // Set text color to white for readability
-        borderRadius: "8px", // Add rounded corners for a polished look
+        flexDirection: "column",
+        height: "100vh", // Full window height
+        width: "100vw", // Full window width
+        backgroundColor: "#1e1e1e",
+        color: "white",
+        overflow: "hidden",
       }}
     >
-      <div style={{ width: "20%", paddingRight: "10px" }}>
-        <h4 style={{ color: "white" }}>Customise Heatmap</h4>
-        <div style={{ marginBottom: "10px" }}>
-          <label htmlFor="label-select" style={{ color: "white" }}>
-            Cell Types:{" "}
-          </label>
-          <Select
-            id="label-select"
-            isMulti
-            options={uniqueLabels.map((label) => ({
-              value: label,
-              label: label,
-            }))}
-            onChange={handleLabelChange}
-            placeholder="Select cell types or leave empty for all..."
-            styles={{
-              control: (provided) => ({
-                ...provided,
-                backgroundColor: "#333", // Darken the dropdown control
-                color: "white", // Set text color to white
-                borderColor: "#555", // Darker border color
-              }),
-              menu: (provided) => ({
-                ...provided,
-                backgroundColor: "#333", // Darken the dropdown menu
-                color: "white",
-              }),
-              multiValue: (provided) => ({
-                ...provided,
-                backgroundColor: "#555", // Darker background for selected items
-                color: "white",
-              }),
-              multiValueLabel: (provided) => ({
-                ...provided,
-                color: "white", // Set text color for selected items
-              }),
-            }}
-          />
-        </div>
-        <div style={{ marginBottom: "10px" }}>
-          <label htmlFor="color-select" style={{ color: "white" }}>
-            Colour Scheme:{" "}
-          </label>
-          <Select
-            id="color-select"
-            options={colorSchemes}
-            onChange={handleColorSchemeChange}
-            placeholder="Select colour scheme..."
-            styles={{
-              control: (provided) => ({
-                ...provided,
-                backgroundColor: "#333", // Darken the dropdown control
-                color: "white", // Set text color to white
-                borderColor: "#555", // Darker border color
-              }),
-              menu: (provided) => ({
-                ...provided,
-                backgroundColor: "#333", // Darken the dropdown menu
-                color: "white",
-              }),
-              singleValue: (provided) => ({
-                ...provided,
-                color: "white", // Set text color to white
-              }),
-            }}
-          />
-        </div>
+      {/* Header Section */}
+      <div
+        style={{
+          padding: "1rem",
+          backgroundColor: "#333",
+          textAlign: "center",
+          fontWeight: "bold",
+        }}
+      >
+        Interaction Frequency Heatmap
       </div>
 
-      <div style={{ width: "80%" }}>
-        <Plot
-          data={[
-            {
-              z: frequencyMatrix,
-              x: labelsToUse,
-              y: labelsToUse,
-              type: "heatmap",
-              colorscale: colorScheme, // Apply selected color scheme
-            },
-          ]}
-          layout={{
-            title: {
-              text: "Interaction Frequency Heatmap",
-              x: 0.5,
-              xanchor: "center",
-              y: 0.95,
-              yanchor: "top",
-              pad: { b: 5 },
-              font: { size: 16, color: "white" }, // Set title text color to white
-            },
-            xaxis: {
-              title: "Target",
-              tickangle: -45, // Rotates x-axis labels for better visibility
-              automargin: true,
-              titlefont: { size: 14, color: "white" }, // Set x-axis title color to white
-              tickfont: { color: "white" }, // Set x-axis tick labels to white
-            },
-            yaxis: {
-              title: "Source",
-              automargin: true,
-              titlefont: { size: 14, color: "white" }, // Set y-axis title color to white
-              tickfont: { color: "white" }, // Set y-axis tick labels to white
-            },
-            paper_bgcolor: "black", // Set the entire background to black
-            plot_bgcolor: "black", // Set the plot area background to black
-            margin: {
-              l: 70, // Minimized left margin for y-axis labels
-              r: 20, // Minimized right margin
-              t: 50, // Minimized top margin for title
-              b: 70, // Minimized bottom margin for x-axis labels
-            },
-            font: {
-              color: "white", // Set font color to white for all texts
-            },
-            height: "100%",
-            width: "100%",
+      {/* Content Section */}
+      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+        {/* Sidebar for customization */}
+        <div
+          style={{
+            width: "20%",
+            backgroundColor: "#2e2e2e",
+            padding: "1rem",
+            boxShadow: "2px 0px 5px rgba(0, 0, 0, 0.5)",
+            overflowY: "auto",
           }}
-          useResizeHandler={true}
-          style={{ width: "100%", height: "100%" }}
-        />
+        >
+          <h4>Customise Heatmap</h4>
+          <div style={{ marginBottom: "10px" }}>
+            <label htmlFor="label-select" style={{ color: "white" }}>
+              Cell Types:
+            </label>
+            <Select
+              id="label-select"
+              isMulti
+              options={uniqueLabels.map((label) => ({
+                value: label,
+                label: label,
+              }))}
+              onChange={handleLabelChange}
+              placeholder="Select cell types..."
+              styles={{
+                control: (provided) => ({
+                  ...provided,
+                  backgroundColor: "#333",
+                  color: "white",
+                  borderColor: "#555",
+                }),
+                menu: (provided) => ({
+                  ...provided,
+                  backgroundColor: "#333",
+                  color: "white",
+                }),
+                multiValue: (provided) => ({
+                  ...provided,
+                  backgroundColor: "#555",
+                  color: "white",
+                }),
+              }}
+            />
+          </div>
+          <div style={{ marginBottom: "10px" }}>
+            <label htmlFor="color-select" style={{ color: "white" }}>
+              Colour Scheme:
+            </label>
+            <Select
+              id="color-select"
+              options={colorSchemes}
+              onChange={handleColorSchemeChange}
+              placeholder="Select colour scheme..."
+              styles={{
+                control: (provided) => ({
+                  ...provided,
+                  backgroundColor: "#333",
+                  color: "white",
+                  borderColor: "#555",
+                }),
+                menu: (provided) => ({
+                  ...provided,
+                  backgroundColor: "#333",
+                  color: "white",
+                }),
+                singleValue: (provided) => ({
+                  ...provided,
+                  color: "white",
+                }),
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Heatmap */}
+        <div style={{ flex: 1, padding: "1rem", overflow: "hidden" }}>
+          <Plot
+            data={[
+              {
+                z: frequencyMatrix,
+                x: labelsToUse,
+                y: labelsToUse,
+                type: "heatmap",
+                colorscale: colorScheme,
+              },
+            ]}
+            layout={{
+              title: "Interaction Frequency Heatmap",
+              xaxis: {
+                title: "Target",
+                tickangle: -45,
+                automargin: true,
+              },
+              yaxis: {
+                title: "Source",
+                automargin: true,
+              },
+              margin: {
+                l: 50,
+                r: 50,
+                t: 50,
+                b: 50,
+              },
+              font: { color: "white" },
+              paper_bgcolor: "#1e1e1e",
+              plot_bgcolor: "#1e1e1e",
+              responsive: true,
+            }}
+            useResizeHandler
+            style={{ width: "100%", height: "100%" }}
+          />
+        </div>
       </div>
     </div>
   );

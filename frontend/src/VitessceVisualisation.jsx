@@ -3,23 +3,47 @@ import { Vitessce } from "vitessce";
 
 const VitessceVisualization = () => {
   const [config, setConfig] = useState();
-  const [width] = useState(500); // Set initial desired width
-  const [height] = useState(700); // Set initial desired height
+  const [samples, setSamples] = useState([]); // List of available samples
+  const [selectedSample, setSelectedSample] = useState(); // Selected sample
 
   useEffect(() => {
-    fetchConfig();
+    fetchSamples();
   }, []);
 
-  const fetchConfig = async () => {
+  useEffect(() => {
+    if (selectedSample) {
+      fetchConfig(selectedSample);
+    }
+  }, [selectedSample]);
+
+  // Fetch the list of available samples
+  const fetchSamples = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:5000/get_anndata");
+      const response = await fetch("http://127.0.0.1:5000/get_samples");
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      const data = await response.json();
+      setSamples(data);
+      setSelectedSample(data[0]); // Set the first sample as default
+    } catch (error) {
+      console.error("Error fetching samples:", error);
+    }
+  };
+
+  // Fetch the config for the selected sample
+  const fetchConfig = async (sample) => {
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:5000/get_config?sample=${sample}`
+      );
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       const data = await response.json();
       setConfig(data);
     } catch (error) {
-      console.error("Error fetching data:", error);
+      console.error("Error fetching config:", error);
     }
   };
 
@@ -28,45 +52,58 @@ const VitessceVisualization = () => {
   return (
     <div
       style={{
-        border: "1px solid #333", // Darker border for dark theme
-        padding: "10px",
-        position: "fixed",
-        left: "0",
-        top: "0",
-        margin: "10px",
-        zIndex: 1000,
-        width: `${width}px`,
-        height: `${height}px`,
-        backgroundColor: "#1e1e1e", // Dark gray background to match the dark theme
-        color: "white", // White text for better contrast
-        boxShadow: "0px 0px 10px rgba(255, 255, 255, 0.2)", // Light shadow for better visibility
-        borderRadius: "8px", // Add rounded corners for a polished look
+        height: "100vh",
+        width: "100vw",
+        display: "flex",
+        flexDirection: "column",
+        backgroundColor: "#1e1e1e",
+        color: "white",
       }}
     >
-      {/* Header section */}
+      {/* Dropdown Menu for Sample Selection */}
       <div
         style={{
-          backgroundColor: "#333", // Darker header background for contrast
-          padding: "8px",
-          marginBottom: "10px",
+          padding: "1rem",
+          backgroundColor: "#333",
           textAlign: "center",
           fontWeight: "bold",
-          color: "white", // White text color for the header
         }}
       >
-        UMAP View
+        <label htmlFor="sample-select" style={{ marginRight: "10px" }}>
+          Select Sample:
+        </label>
+        <select
+          id="sample-select"
+          value={selectedSample}
+          onChange={(e) => setSelectedSample(e.target.value)}
+          style={{
+            backgroundColor: "#333",
+            color: "white",
+            border: "1px solid #555",
+            borderRadius: "4px",
+            padding: "5px",
+          }}
+        >
+          {samples.map((sample) => (
+            <option key={sample} value={sample}>
+              {sample}
+            </option>
+          ))}
+        </select>
       </div>
 
-      {/* Vitessce component container with padding */}
+      {/* Vitessce Viewer */}
       <div
         style={{
-          padding: "10px", // Add padding around the Vitessce component
-          backgroundColor: "#1e1e1e", // Same background color for consistency
-          borderRadius: "8px", // Rounded corners for a polished look
+          flex: 1,
+          display: "flex",
+          gap: "10px",
+          padding: "1rem",
         }}
       >
-        {/* Vitessce component */}
-        <Vitessce config={config} width={width - 20} height={height - 60} theme="dark" />
+        <div style={{ backgroundColor: "#242424", borderRadius: "8px" }}>
+          <Vitessce config={config} theme="dark" />
+        </div>
       </div>
     </div>
   );
