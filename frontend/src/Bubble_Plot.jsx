@@ -166,6 +166,11 @@ const InteractiveBubblePlot = () => {
                   backgroundColor: "#333",
                   color: "white",
                 }),
+                option: (provided, state) => ({
+                  ...provided,
+                  backgroundColor: state.isFocused ? "#555" : "#333", // Darker highlight
+                  color: "white",
+                }),
                 multiValue: (provided) => ({
                   ...provided,
                   backgroundColor: "#555",
@@ -194,6 +199,11 @@ const InteractiveBubblePlot = () => {
                 menu: (provided) => ({
                   ...provided,
                   backgroundColor: "#333",
+                  color: "white",
+                }),
+                option: (provided, state) => ({
+                  ...provided,
+                  backgroundColor: state.isFocused ? "#555" : "#333", // Darker highlight
                   color: "white",
                 }),
                 multiValue: (provided) => ({
@@ -225,6 +235,11 @@ const InteractiveBubblePlot = () => {
                   backgroundColor: "#333",
                   color: "white",
                 }),
+                option: (provided, state) => ({
+                  ...provided,
+                  backgroundColor: state.isFocused ? "#555" : "#333", // Darker highlight
+                  color: "white",
+                }),
                 singleValue: (provided) => ({
                   ...provided,
                   color: "white",
@@ -235,51 +250,55 @@ const InteractiveBubblePlot = () => {
         </div>
 
         <div style={{ flex: 1, padding: "1rem", overflow: "hidden" }}>
-          <Plot
-            data={[
-              {
-                x: filteredData.map((item) => item.Interacting_Pair),
-                y: filteredData.map((item) => item.interaction_name_2),
-                text: filteredData.map(
-                  (item) =>
-                    `pval: ${item.pval || 0.01}, prob: ${item.prob || 0}`
-                ),
-                mode: "markers",
-                marker: {
-                  size: bubbleSizes,
-                  sizemode: "area",
-                  color: bubbleColors,
-                  colorscale: colorScheme,
-                  showscale: true,
+          {selectedSources.length > 0 || selectedTargets.length > 0 ? (
+            <Plot
+              data={[
+                {
+                  x: filteredData.map((item) => item.Interacting_Pair),
+                  y: filteredData.map((item) => item.interaction_name_2),
+                  text: filteredData.map(
+                    (item) =>
+                      `pval: ${item.pval || 0.01}, prob: ${item.prob || 0}`
+                  ),
+                  mode: "markers",
+                  marker: {
+                    size: bubbleSizes,
+                    sizemode: "area",
+                    color: bubbleColors,
+                    colorscale: colorScheme,
+                    showscale: true,
+                  },
+                  type: "scatter",
                 },
-                type: "scatter",
-              },
-            ]}
-            layout={{
-              title: "Interactive Bubble Plot",
-              paper_bgcolor: "#1e1e1e",
-              plot_bgcolor: "#1e1e1e",
-              font: { color: "white" },
-              xaxis: {
-                title: "Interacting Pair",
-                tickangle: -45,
-                automargin: true,
-              },
-              yaxis: {
-                title: "Interaction Name",
-                automargin: true,
-              },
-              margin: {
-                l: 50,
-                r: 50,
-                t: 50,
-                b: 50,
-              },
-              responsive: true,
-            }}
-            useResizeHandler
-            style={{ width: "100%", height: "100%" }}
-          />
+              ]}
+              layout={{
+                title: "Interactive Bubble Plot",
+                paper_bgcolor: "#1e1e1e",
+                plot_bgcolor: "#1e1e1e",
+                font: { color: "white" },
+                xaxis: {
+                  title: "Interacting Pair",
+                  tickangle: -45,
+                  automargin: true,
+                },
+                yaxis: {
+                  title: "Interaction Name",
+                  automargin: true,
+                },
+                margin: {
+                  l: 50,
+                  r: 50,
+                  t: 50,
+                  b: 50,
+                },
+                responsive: true,
+              }}
+              useResizeHandler
+              style={{ width: "100%", height: "100%" }}
+            />
+          ) : (
+            <p>Select sources or targets of interest to begin plotting.</p>
+          )}
         </div>
       </div>
     </div>

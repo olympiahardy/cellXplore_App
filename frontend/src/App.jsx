@@ -5,7 +5,9 @@ import VitessceVisualization from "./VitessceVisualisation.jsx";
 import InteractionDataTable from "./Table.jsx";
 import FrequencyHeatmap from "./Frequency_Heatmap.jsx";
 import InteractiveBubblePlot from "./Bubble_Plot.jsx";
-
+import StackedProportionBarplot from "./Pathway_Proportion.jsx";
+import SankeyPlot from "./Sankey_Plot.jsx";
+import CircosPlot from "./Circos_Plot.jsx";
 const App = () => {
   const [tabIndex, setTabIndex] = useState(0);
 
@@ -42,7 +44,9 @@ const App = () => {
             textAlign: "right",
           }}
         >
-          <h2 style={{ margin: 0, fontSize: "1.5rem" }}>Interactively explore cellular interactions</h2>
+          <h2 style={{ margin: 0, fontSize: "1.5rem" }}>
+            Interactively explore cellular interactions
+          </h2>
           <p style={{ margin: 0, fontSize: "1rem" }}>
             Select a tab to view different visualizations
           </p>
@@ -59,18 +63,32 @@ const App = () => {
           <TabList>
             <Tab>Single Cell View</Tab>
             <Tab>Interactions Table</Tab>
+            <Tab>Pathway Proportions</Tab>
             <Tab>Bubble Plot</Tab>
             <Tab>Heatmap</Tab>
+            <Tab>Sankey Plot</Tab>
+            <Tab>Circos Plot</Tab>
           </TabList>
 
           <TabPanel>
-            <div style={{ height: "100%" }}>
-              <VitessceVisualization />
+            <div
+              style={{
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              <VitessceVisualization style={{ flex: 1, width: "100%" }} />
             </div>
           </TabPanel>
           <TabPanel>
             <div style={{ height: "100%", overflow: "auto" }}>
               <InteractionDataTable />
+            </div>
+          </TabPanel>
+          <TabPanel>
+            <div style={{ height: "100%", overflow: "auto" }}>
+              <StackedProportionBarplot />
             </div>
           </TabPanel>
           <TabPanel>
@@ -81,6 +99,16 @@ const App = () => {
           <TabPanel>
             <div style={{ height: "100%", overflow: "auto" }}>
               <FrequencyHeatmap />
+            </div>
+          </TabPanel>
+          <TabPanel>
+            <div style={{ height: "100%", overflow: "auto" }}>
+              <SankeyPlot />
+            </div>
+          </TabPanel>
+          <TabPanel>
+            <div style={{ height: "100%", overflow: "auto" }}>
+              <CircosPlot />
             </div>
           </TabPanel>
         </Tabs>

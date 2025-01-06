@@ -148,6 +148,11 @@ const FrequencyHeatmap = () => {
                   backgroundColor: "#333",
                   color: "white",
                 }),
+                option: (provided, state) => ({
+                  ...provided,
+                  backgroundColor: state.isFocused ? "#555" : "#333", // Darker highlight
+                  color: "white",
+                }),
                 multiValue: (provided) => ({
                   ...provided,
                   backgroundColor: "#555",
@@ -175,6 +180,11 @@ const FrequencyHeatmap = () => {
                 menu: (provided) => ({
                   ...provided,
                   backgroundColor: "#333",
+                  color: "white",
+                }),
+                option: (provided, state) => ({
+                  ...provided,
+                  backgroundColor: state.isFocused ? "#555" : "#333", // Darker highlight
                   color: "white",
                 }),
                 singleValue: (provided) => ({

@@ -13,7 +13,7 @@ CORS(app, origins=["http://localhost:5174"])
 
 zarr_cache = None 
 
-MERGED_ZARR_FILE = "data.zarr"
+MERGED_ZARR_FILE = "tbrucei_brain_spatial_spatial_data.zarr"
 CONFIG_DIR = "/Users/olympia/cellXplore_App/configs/"
 BASE_DIR = "/Users/olympia/cellXplore_App/datasets/"
 
@@ -40,14 +40,14 @@ def generate_configs_from_merged_zarr(merged_zarr_file, output_dir, base_dir):
             sample_name = key.rsplit('_', 2)[0]  # Extract the sample prefix (e.g., 'Naive_1')
             sample_groups.setdefault(sample_name, []).append(key)
 
-        # Process each sample group
-        for sample, keys in sample_groups.items():
-            has_hires = any('hires' in key for key in keys)
-            if has_hires:
-                # Remove lowres keys if hires exists
-                for key in keys:
-                    if 'lowres' in key:
-                        del zarr_cache.images[key]
+        # # Process each sample group
+        # for sample, keys in sample_groups.items():
+        #     has_hires = any('hires' in key for key in keys)
+        #     if has_hires:
+        #         # Remove lowres keys if hires exists
+        #         for key in keys:
+        #             if 'lowres' in key:
+        #                 del zarr_cache.images[key]
         
 
         #dataset_names = set("_".join(name.split("_")[:2]) for name in zarr_cache.images.keys())
@@ -66,31 +66,45 @@ def generate_configs_from_merged_zarr(merged_zarr_file, output_dir, base_dir):
                 # The following paths are relative to the root of the SpatialData zarr store on-disk.
                 image_path=f"images/{image_name}",
                 table_path="tables/table",
-                obs_spots_path=f"shapes/{image_name}_shapes/coords",
+                region=f"shapes/{image_name}_shapes",
+                obs_spots_path="tables/table/obsm/spatial",
                 obs_feature_matrix_path="tables/table/X",
-                obs_embedding_paths="tables/table/obsm/X_umap",
-                obs_embedding_names="UMAP",
-                coordinate_system="global",
                 coordination_values={
                     # The following tells Vitessce to consider each observation as a "spot"
                     "obsType": "spot",
-                    "embeddingType": "UMAP"
+                    "featureType": "gene",
+                    "featureValueType": "detection count"
                 }
             )
             dataset = vc.add_dataset(name='Tbrucei Visium').add_object(wrapper)
 
-            spatial = vc.add_view("spatialBeta", dataset=dataset)
-            layer_controller = vc.add_view("layerControllerBeta", dataset=dataset)
-            umap_view = vc.add_view(vt.SCATTERPLOT, dataset=dataset, coordination_scopes={"embeddingType": "UMAP"})
-            # vc.link_views_by_dict([spatial, layer_controller], {
-            #     'imageLayer': CL([{
-            #         'photometricInterpretation': 'RGB',
-            #     }]),
-            # }, scope_prefix=get_initial_coordination_scope_prefix("A", "image"))
-            obs_sets = vc.add_view(vt.OBS_SETS, dataset=dataset)
-            vc.link_views([spatial, obs_sets, umap_view], ['obsType', 'embeddingType'], [wrapper.obs_type_label, "UMAP"])
+            # Add UMAP embeddings from the Zarr store
+    
+            dataset.add_file(
+                file_type="anndata.zarr",
+                url=f'http://127.0.0.1:5000/datasets/{MERGED_ZARR_FILE}',
+                coordination_values={
+                    "obsType": "spot"},
+                options={
+                    "obsEmbedding": [
+                       {"path": "tables/table/obsm/X_umap", "embeddingType": "UMAP"}
+                    ],
+            #         "featureLabels": {"path": "tables/table/var/gene_names"}
+                }
+             )
 
-            vc.layout(umap_view | spatial / obs_sets)
+            spatial = vc.add_view("spatialBeta", dataset=dataset)
+            # layer_controller = vc.add_view("layerControllerBeta", dataset=dataset)
+            umap_view = vc.add_view(vt.SCATTERPLOT, dataset=dataset, coordination_scopes={"embeddingType": "UMAP"})
+            # # vc.link_views_by_dict([spatial, layer_controller], {
+            # #     'imageLayer': CL([{
+            # #         'photometricInterpretation': 'RGB',
+            # #     }]),
+            # # }, scope_prefix=get_initial_coordination_scope_prefix("A", "image"))
+            # obs_sets = vc.add_view(vt.OBS_SETS, dataset=dataset)
+            # vc.link_views([spatial, obs_sets, umap_view], ['obsType', 'embeddingType'], [wrapper.obs_type_label, "UMAP"])
+            vc.layout(spatial | umap_view)
+            # vc.layout(umap_view | spatial / obs_sets)
             # Generate and save the configuration
             config_dict = vc.to_dict(base_url="http://127.0.0.1:5000/datasets")
             output_path = os.path.join(output_dir, f"{image_name}.json")
@@ -168,6 +182,116 @@ def get_data_table():
 
     except Exception as e:
         print("General error in '/data-table' endpoint:", str(e))
+        traceback.print_exc()  # Prints the full traceback to console
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+    
+
+@app.route('/prop-freq', methods=['GET'])
+def get_table_prop():
+    try:
+        # Check if the Zarr object is loaded
+        if zarr_cache is not None:
+            try:
+                # Access the DataFrame in the `.uns` slot
+                if 'Cellchat_Interactions' in zarr_cache.tables["table"].uns["Interactions"]:
+                    df = zarr_cache.tables["table"].uns["Interactions"]['Cellchat_Interactions']
+                    #print("DataFrame accessed:", df)
+                    
+                    # Convert the DataFrame to JSON format
+                    data = df.to_json(orient='records')
+                    #print("Data converted to JSON format:", data)
+                else:
+                    print("Key 'Cellchat_Interactions' not found in zarr_cache")
+                    data = []  # Return an empty array if the key is not found
+            except Exception as e:
+                print("Error accessing DataFrame in 'zarr_cache.uns':", str(e))
+                traceback.print_exc()  # Prints the full traceback to console
+                return jsonify({"error": f"Failed to access DataFrame: {str(e)}"}), 500
+        else:
+            print("Zarr cache not loaded.")
+            data = []  # Return an empty array if Zarr file failed to load
+
+        # Log the data type for debugging
+        #print("Data type:", type(data))
+        
+        # Return the data as JSON
+        return Response(data, mimetype='application/json')
+
+    except Exception as e:
+        print("General error in '/prop-freq' endpoint:", str(e))
+        traceback.print_exc()  # Prints the full traceback to console
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+    
+
+@app.route('/sankey', methods=['GET'])
+def get_table_sankey():
+    try:
+        # Check if the Zarr object is loaded
+        if zarr_cache is not None:
+            try:
+                # Access the DataFrame in the `.uns` slot
+                if 'Cellchat_Interactions' in zarr_cache.tables["table"].uns["Interactions"]:
+                    df = zarr_cache.tables["table"].uns["Interactions"]['Cellchat_Interactions']
+                    #print("DataFrame accessed:", df)
+                    
+                    # Convert the DataFrame to JSON format
+                    data = df.to_json(orient='records')
+                    #print("Data converted to JSON format:", data)
+                else:
+                    print("Key 'Cellchat_Interactions' not found in zarr_cache")
+                    data = []  # Return an empty array if the key is not found
+            except Exception as e:
+                print("Error accessing DataFrame in 'zarr_cache.uns':", str(e))
+                traceback.print_exc()  # Prints the full traceback to console
+                return jsonify({"error": f"Failed to access DataFrame: {str(e)}"}), 500
+        else:
+            print("Zarr cache not loaded.")
+            data = []  # Return an empty array if Zarr file failed to load
+
+        # Log the data type for debugging
+        #print("Data type:", type(data))
+        
+        # Return the data as JSON
+        return Response(data, mimetype='application/json')
+
+    except Exception as e:
+        print("General error in '/sankey' endpoint:", str(e))
+        traceback.print_exc()  # Prints the full traceback to console
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+
+@app.route('/circos', methods=['GET'])
+def get_table_circos():
+    try:
+        # Check if the Zarr object is loaded
+        if zarr_cache is not None:
+            try:
+                # Access the DataFrame in the `.uns` slot
+                if 'Cellchat_Interactions' in zarr_cache.tables["table"].uns["Interactions"]:
+                    df = zarr_cache.tables["table"].uns["Interactions"]['Cellchat_Interactions']
+                    #print("DataFrame accessed:", df)
+                    
+                    # Convert the DataFrame to JSON format
+                    data = df.to_json(orient='records')
+                    #print("Data converted to JSON format:", data)
+                else:
+                    print("Key 'Cellchat_Interactions' not found in zarr_cache")
+                    data = []  # Return an empty array if the key is not found
+            except Exception as e:
+                print("Error accessing DataFrame in 'zarr_cache.uns':", str(e))
+                traceback.print_exc()  # Prints the full traceback to console
+                return jsonify({"error": f"Failed to access DataFrame: {str(e)}"}), 500
+        else:
+            print("Zarr cache not loaded.")
+            data = []  # Return an empty array if Zarr file failed to load
+
+        # Log the data type for debugging
+        #print("Data type:", type(data))
+        
+        # Return the data as JSON
+        return Response(data, mimetype='application/json')
+
+    except Exception as e:
+        print("General error in '/circos' endpoint:", str(e))
         traceback.print_exc()  # Prints the full traceback to console
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
@@ -263,6 +387,10 @@ def send_report(path):
     if path == f'{MERGED_ZARR_FILE}/tables/table/var/.zarray':
              # Redirect to the correct file location for obs
          path = f'{MERGED_ZARR_FILE}/tables/table/var/_index/.zarray'
+
+    if path == f'{MERGED_ZARR_FILE}/table/table/var/.zarray':
+             # Redirect to the correct file location for obs
+         path = f'{MERGED_ZARR_FILE}/table/table/var/_index/.zarray'
      
     if path == f'{MERGED_ZARR_FILE}/tables/table/obs/.zarray':
              # Redirect to the correct file location for obs
