@@ -58,6 +58,7 @@ const VitessceVisualization = () => {
         flexDirection: "column",
         backgroundColor: "#1e1e1e",
         color: "white",
+        overflow: "hidden", // Prevent unwanted scrolling
       }}
     >
       {/* Dropdown Menu for Sample Selection */}
@@ -97,13 +98,15 @@ const VitessceVisualization = () => {
         style={{
           flex: 1,
           display: "flex",
-          gap: "10px",
-          padding: "1rem",
+          backgroundColor: "#242424",
         }}
       >
-        <div style={{ backgroundColor: "#242424", borderRadius: "8px" }}>
-          <Vitessce config={config} theme="dark" />
-        </div>
+        <Vitessce
+          config={config}
+          theme="dark"
+          height={window.innerHeight - 120} // Calculate height dynamically
+          width="100%"
+        />
       </div>
     </div>
   );

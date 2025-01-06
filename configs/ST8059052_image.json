@@ -1,0 +1,95 @@
+{
+    "version": "1.0.16",
+    "name": "Visium SpatialData Demo (visium_associated_xenium_io)",
+    "description": "",
+    "datasets": [
+        {
+            "uid": "A",
+            "name": "Tbrucei Visium",
+            "files": [
+                {
+                    "fileType": "spatialdata.zarr",
+                    "url": "http://127.0.0.1:5000/datasets/data.zarr",
+                    "options": {
+                        "obsFeatureMatrix": {
+                            "path": "tables/table/X"
+                        },
+                        "obsSpots": {
+                            "path": "shapes/ST8059052_image_shapes/coords",
+                            "tablePath": "tables/table",
+                            "coordinateSystem": "global"
+                        },
+                        "image": {
+                            "path": "images/ST8059052_image",
+                            "coordinateSystem": "global"
+                        }
+                    },
+                    "coordinationValues": {
+                        "obsType": "spot",
+                        "embeddingType": "UMAP"
+                    }
+                }
+            ]
+        }
+    ],
+    "coordinationSpace": {
+        "dataset": {
+            "A": "A"
+        },
+        "obsType": {
+            "A": "spot"
+        },
+        "embeddingType": {
+            "A": "UMAP"
+        }
+    },
+    "layout": [
+        {
+            "component": "spatialBeta",
+            "coordinationScopes": {
+                "dataset": "A",
+                "obsType": "A",
+                "embeddingType": "A"
+            },
+            "x": 6.0,
+            "y": 0.0,
+            "w": 6.0,
+            "h": 6.0
+        },
+        {
+            "component": "layerControllerBeta",
+            "coordinationScopes": {
+                "dataset": "A"
+            },
+            "x": 0,
+            "y": 0,
+            "w": 1,
+            "h": 1
+        },
+        {
+            "component": "scatterplot",
+            "coordinationScopes": {
+                "dataset": "A",
+                "embeddingType": "A",
+                "obsType": "A"
+            },
+            "x": 0.0,
+            "y": 0,
+            "w": 6.0,
+            "h": 12
+        },
+        {
+            "component": "obsSets",
+            "coordinationScopes": {
+                "dataset": "A",
+                "obsType": "A",
+                "embeddingType": "A"
+            },
+            "x": 6.0,
+            "y": 6.0,
+            "w": 6.0,
+            "h": 6.0
+        }
+    ],
+    "initStrategy": "auto"
+}

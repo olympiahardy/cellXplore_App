@@ -55,7 +55,12 @@ function InteractionDataTable() {
   }
 
   if (data.length === 0) {
-    return <p>No data available.</p>;
+    return (
+      <p>
+        No data available. Please complete your cell-cell interaction analysis
+        first!
+      </p>
+    );
   }
 
   return (

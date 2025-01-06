@@ -1,6 +1,5 @@
 from flask import Flask, Response
 from flask import request, jsonify, send_from_directory, abort, send_file
-from config import create_vitessce_config
 from flask_cors import CORS
 import traceback
 from pprint import pprint
@@ -14,7 +13,7 @@ CORS(app, origins=["http://localhost:5174"])
 
 zarr_cache = None 
 
-MERGED_ZARR_FILE = "tbrucei_brain_spatial_spatial_data3.zarr"
+MERGED_ZARR_FILE = "data.zarr"
 CONFIG_DIR = "/Users/olympia/cellXplore_App/configs/"
 BASE_DIR = "/Users/olympia/cellXplore_App/datasets/"
 
@@ -29,12 +28,31 @@ load_cached_zarr()
 def generate_configs_from_merged_zarr(merged_zarr_file, output_dir, base_dir):
     try:
         global zarr_cache
+
         if zarr_cache is None:
             zarr_cache = sd.read_zarr(os.path.join(base_dir, merged_zarr_file))
+        
+        image_keys = list(zarr_cache.images.keys())
 
-        dataset_names = set("_".join(name.split("_")[:2]) for name in zarr_cache.images.keys())
+        # Group image keys by sample
+        sample_groups = {}
+        for key in image_keys:
+            sample_name = key.rsplit('_', 2)[0]  # Extract the sample prefix (e.g., 'Naive_1')
+            sample_groups.setdefault(sample_name, []).append(key)
+
+        # Process each sample group
+        for sample, keys in sample_groups.items():
+            has_hires = any('hires' in key for key in keys)
+            if has_hires:
+                # Remove lowres keys if hires exists
+                for key in keys:
+                    if 'lowres' in key:
+                        del zarr_cache.images[key]
+        
+
+        #dataset_names = set("_".join(name.split("_")[:2]) for name in zarr_cache.images.keys())
         os.makedirs(output_dir, exist_ok=True)
-
+        print(f'HERE ARE MY {zarr_cache.images.keys()}')
         for image_name in zarr_cache.images.keys():
             vc = VitessceConfig(
             schema_version="1.0.16",
@@ -44,16 +62,14 @@ def generate_configs_from_merged_zarr(merged_zarr_file, output_dir, base_dir):
             # Add data to the configuration:
             wrapper = SpatialDataWrapper(
                 sdata_path=MERGED_ZARR_FILE,
+                file_uid=merged_zarr_file,
                 # The following paths are relative to the root of the SpatialData zarr store on-disk.
-                image_path=f"images/{image_name}_hires_image",
+                image_path=f"images/{image_name}",
                 table_path="tables/table",
+                obs_spots_path=f"shapes/{image_name}_shapes/coords",
                 obs_feature_matrix_path="tables/table/X",
-                obs_spots_path="shapes/locations",
                 obs_embedding_paths="tables/table/obsm/X_umap",
                 obs_embedding_names="UMAP",
-                obs_set_paths="tables/table/obs/region",
-                obs_set_names="region",
-                region="Tbrucei brain",
                 coordinate_system="global",
                 coordination_values={
                     # The following tells Vitessce to consider each observation as a "spot"
@@ -62,138 +78,29 @@ def generate_configs_from_merged_zarr(merged_zarr_file, output_dir, base_dir):
                 }
             )
             dataset = vc.add_dataset(name='Tbrucei Visium').add_object(wrapper)
+
             spatial = vc.add_view("spatialBeta", dataset=dataset)
             layer_controller = vc.add_view("layerControllerBeta", dataset=dataset)
             umap_view = vc.add_view(vt.SCATTERPLOT, dataset=dataset, coordination_scopes={"embeddingType": "UMAP"})
-            vc.link_views_by_dict([spatial, layer_controller], {
-                'imageLayer': CL([{
-                    'photometricInterpretation': 'RGB',
-                }]),
-            }, scope_prefix=get_initial_coordination_scope_prefix("A", "image"))
-            vc.link_views([spatial, layer_controller, umap_view], ['obsType', 'embeddingType'], [wrapper.obs_type_label, "UMAP"])
+            # vc.link_views_by_dict([spatial, layer_controller], {
+            #     'imageLayer': CL([{
+            #         'photometricInterpretation': 'RGB',
+            #     }]),
+            # }, scope_prefix=get_initial_coordination_scope_prefix("A", "image"))
+            obs_sets = vc.add_view(vt.OBS_SETS, dataset=dataset)
+            vc.link_views([spatial, obs_sets, umap_view], ['obsType', 'embeddingType'], [wrapper.obs_type_label, "UMAP"])
 
-            vc.layout(umap_view | spatial)
+            vc.layout(umap_view | spatial / obs_sets)
             # Generate and save the configuration
             config_dict = vc.to_dict(base_url="http://127.0.0.1:5000/datasets")
             output_path = os.path.join(output_dir, f"{image_name}.json")
             with open(output_path, "w") as json_file:
                 json.dump(config_dict, json_file, indent=4)
 
-        print(f"Configurations generated for datasets: {', '.join(dataset_names)}")
+        print(f"Configurations generated for datasets: {', '.join(zarr_cache.images.keys())}")
     except Exception as e:
         print(f"Error generating configurations: {str(e)}")
         traceback.print_exc()
-
-
-# def generate_configs_from_merged_zarr(merged_zarr_file, output_dir, base_dir):
-#     try:
-#         global zarr_cache
-#         if zarr_cache is None:
-#             zarr_cache = sd.read_zarr(os.path.join(base_dir, merged_zarr_file))
-
-#         print(f"Base directory: {base_dir}")
-#         print(f"Merged Zarr file: {os.path.join(base_dir, merged_zarr_file)}")
-
-#         dataset_names = set("_".join(name.split("_")[:2]) for name in zarr_cache.images.keys())
-#         os.makedirs(output_dir, exist_ok=True)
-
-#         for dataset_name in dataset_names:
-#             config_name = f"Vitessce Config for {dataset_name}"
-#             vc = VitessceConfig(name=config_name, schema_version="1.0.16", base_dir=base_dir)
-
-#             dataset = vc.add_dataset(name=dataset_name)
-#             print(f"Processing dataset: {dataset_name}")
-
-#             for image_name in zarr_cache.images.keys():
-#                 if image_name.startswith(dataset_name):
-#                     dataset.add_object(
-#                         SpatialDataWrapper(
-#                             sdata_path=MERGED_ZARR_FILE,
-#                             image_path=f"images/{image_name}/",
-#                             table_path="tables/table",
-#                             obs_feature_matrix_path="tables/table/X",
-#                             obs_spots_path="shapes/locations",
-#                             obs_embedding_paths="tables/table/obsm/X_umap",
-#                             obs_embedding_names="UMAP",
-#                             obs_set_paths="tables/table/obs/region",
-#                             obs_set_names="region",
-#                             coordinate_system="global",
-#                             coordination_values={"obsType": "spot",
-#                                                  "embeddingType": "UMAP",
-#                                                  "imageLayer": image_name
-#                                                         }
-#                         )
-#                     )
-#             print(f"Dataset object added for {dataset_name}")
-
-#             spatial_views = []
-#             layer_controllers = []
-#             x, y = 0, 0
-#             for image_name in zarr_cache.images.keys():
-#                 if dataset_name in image_name:
-#                     #image_layer_scope = vc.add_coordination("imageLayer", image_name)
-#                     #print(image_layer_scope)
-#                     # Create a layer controller for the same image and assign the same scope
-#                     layer_controller = vc.add_view(
-#                         "layerControllerBeta",
-#                         dataset=dataset,
-#                         coordination_scopes={"imageLayer": image_name}
-#                     )
-#                     layer_controllers.append(layer_controller)
-
-#                     spatial_view = vc.add_view("spatialBeta", dataset=dataset)
-#                     spatial_views.append(spatial_view)
-
-#             #layer_controller = vc.add_view("layerControllerBeta", dataset=dataset)
-#             umap_view = vc.add_view("scatterplot", dataset=dataset, coordination_scopes={"embeddingType": "UMAP"})
-#             obs_sets = vc.add_view("obsSets", dataset=dataset)
-
-
-#             # Link views
-#             for spatial_view, layer_controller in zip(spatial_views, layer_controllers):
-#                 vc.link_views([spatial_view, layer_controller], {
-#                 'imageLayer': CL([{
-#                     'photometricInterpretation': 'RGB',
-#                 }]),
-#             })
-#             vc.link_views([umap_view, obs_sets], ["embeddingType"])
-
-#             vc.layout(spatial_view | umap_view)
-#             # Layout the views
-#             layout_items = []
-#             for spatial_view, layer_controller in zip(spatial_views, layer_controllers):
-#                 layout_items.append(spatial_view | layer_controller)
-
-#             if layout_items:
-#                 vc.layout(layout_items[0] | umap_view )
-#             # # Flatten spatial_views before linking
-#             # all_views = spatial_views + [layer_controller, obs_sets, umap_view]
-
-#             #             # Link views using CoordinationLevel
-#             # vc.link_views_by_dict([spatial_views, layer_controller], {
-#             #     'imageLayer': CL([{
-#             #         'photometricInterpretation': 'RGB',
-#             #     }]),
-#             # })
-            
-#             # # Link views using CoordinationLevel
-#             # vc.link_views(all_views, ['obsType', 'embeddingType'], allow_multiple_scopes_per_type=True)
-
-#             # if spatial_views:
-#             #     vc.layout(umap_view | spatial_views[0] | (layer_controller / obs_sets))
-            
-#             config_dict = vc.to_dict(base_url="http://127.0.0.1:5000/datasets")
-#             output_path = os.path.join(output_dir, f"{dataset_name}.json")
-#             with open(output_path, "w") as json_file:
-#                 json.dump(config_dict, json_file, indent=4)
-
-#         print(f"Configurations generated for datasets: {', '.join(dataset_names)}")
-
-#     except Exception as e:
-#         print(f"Error generating configurations: {str(e)}")
-#         traceback.print_exc()
-
-# # Generate configurations at startup
 
 generate_configs_from_merged_zarr(MERGED_ZARR_FILE, CONFIG_DIR, BASE_DIR)
 
@@ -338,25 +245,33 @@ def get_cellchat_bubble():
 def send_report(path):
     print(f'Requested path: {path}')
     
-    # Check if the requested path is the missing .zarray file
-    if path == 'my_spatialdata_test.zarr/images/Naive_1_image/.zarray':
-        # Redirect to the correct file location
-        path = 'my_spatialdata_test.zarr/images/Naive_1_image/0/.zarray'
+    sample_names = ["Naive_1, Naive_2, Dpi_25_1, Dpi_25_2, Dpi_45_1"]
 
-    # Check if the requested path is the missing .zarray file for obs
-    if path == 'my_spatialdata_test.zarr/images/Naive_1_image/0/.zattrs':
-        # Redirect to the correct file location for obs
-        path = 'my_spatialdata_test.zarr/images/Naive_1_image/.zattrs'
+    for sample in sample_names: 
+         # Check if the requested path is the missing .zarray file
+         if path == f'{MERGED_ZARR_FILE}/images/{sample}_hires_image/.zarray':
+             # Redirect to the correct file location
+             path = f'{MERGED_ZARR_FILE}/images/{sample}_hires_image/0/.zarray'
+
+    #     # Check if the requested path is the missing .zarray file for obs
+    #     if path == f'{MERGED_ZARR_FILE}/images/{sample}_hires_image/0/.zattrs':
+    #         # Redirect to the correct file location for obs
+    #         path = f'{MERGED_ZARR_FILE}/images/{sample}_hires_image/.zattrs'
+
+    #     # Check if the requested path is the missing .zarray file for obs
     
-    # Check if the requested path is the missing .zarray file for obs
-    if path == 'tbrucei_brain_spatial.zarr/obs/clusters/.zarray':
-        # Redirect to the correct file location for obs
-        path = 'tbrucei_brain_spatial.zarr/obs/clusters/categories/.zarray'
+    if path == f'{MERGED_ZARR_FILE}/tables/table/var/.zarray':
+             # Redirect to the correct file location for obs
+         path = f'{MERGED_ZARR_FILE}/tables/table/var/_index/.zarray'
+     
+    if path == f'{MERGED_ZARR_FILE}/tables/table/obs/.zarray':
+             # Redirect to the correct file location for obs
+        path = f'{MERGED_ZARR_FILE}/tables/table/obs/_index/.zarray'   
 
-    # Check if the requested path is the missing .zarray file for obs
-    if path == 'tbrucei_brain_spatial.zarr/obs/library_id/.zarray':
-        # Redirect to the correct file location for obs
-        path = 'tbrucei_brain_spatial.zarr/obs/library_id/categories/.zarray'
+    # if path == f'{MERGED_ZARR_FILE}/tables/table/uns/.zarray':
+    #         # Redirect to the correct file location for obs
+    #     path = f'{MERGED_ZARR_FILE}/tables/table/uns/_index/.zarray'  
+    
     try:
         # Send the file from the datasets directory
         return send_from_directory('../datasets', path)

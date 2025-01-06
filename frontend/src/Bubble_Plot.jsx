@@ -82,7 +82,9 @@ const InteractiveBubblePlot = () => {
       (selectedTargets.length === 0 || selectedTargets.includes(item.target))
   );
 
-  const pvals = filteredData.map((item) => item.pval !== undefined ? item.pval : 0.01);
+  const pvals = filteredData.map((item) =>
+    item.pval !== undefined ? item.pval : 0.01
+  );
   const minPval = Math.min(...pvals);
   const maxPval = Math.max(...pvals);
 
@@ -97,6 +99,15 @@ const InteractiveBubblePlot = () => {
 
   if (loading) {
     return <div>Loading...</div>;
+  }
+
+  if (data.length === 0) {
+    return (
+      <p>
+        No data available. Please complete your cell-cell interaction analysis
+        first!
+      </p>
+    );
   }
 
   return (
