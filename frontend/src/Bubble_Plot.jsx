@@ -126,8 +126,9 @@ const InteractiveBubblePlot = () => {
         style={{
           padding: "1rem",
           backgroundColor: "#333",
-          textAlign: "center",
+          textAlign: "left",
           fontWeight: "bold",
+          width: "25vw"
         }}
       >
         Interactive Bubble Plot
@@ -136,7 +137,7 @@ const InteractiveBubblePlot = () => {
       <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
         <div
           style={{
-            width: "20%",
+            width: "25%",
             backgroundColor: "#2e2e2e",
             padding: "1rem",
             boxShadow: "2px 0px 5px rgba(0, 0, 0, 0.5)",
