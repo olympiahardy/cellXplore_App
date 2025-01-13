@@ -13,7 +13,7 @@ CORS(app, origins=["http://localhost:5174"])
 
 zarr_cache = None 
 
-MERGED_ZARR_FILE = "tbrucei_brain_spatial_spatial_data.zarr"
+MERGED_ZARR_FILE = "data.zarr"
 CONFIG_DIR = "/Users/olympia/cellXplore_App/configs/"
 BASE_DIR = "/Users/olympia/cellXplore_App/datasets/"
 
@@ -66,7 +66,7 @@ def generate_configs_from_merged_zarr(merged_zarr_file, output_dir, base_dir):
                 # The following paths are relative to the root of the SpatialData zarr store on-disk.
                 image_path=f"images/{image_name}",
                 table_path="tables/table",
-                region=f"shapes/{image_name}_shapes",
+                region=zarr_cache.tables["uns"]["spatial"],
                 obs_spots_path="tables/table/obsm/spatial",
                 obs_feature_matrix_path="tables/table/X",
                 coordination_values={

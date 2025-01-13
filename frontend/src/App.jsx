@@ -8,6 +8,7 @@ import InteractiveBubblePlot from "./Bubble_Plot.jsx";
 import StackedProportionBarplot from "./Pathway_Proportion.jsx";
 import SankeyPlot from "./Sankey_Plot.jsx";
 import CircosPlot from "./Circos_Plot.jsx";
+import "./App.css";
 const App = () => {
   const [tabIndex, setTabIndex] = useState(0);
 
