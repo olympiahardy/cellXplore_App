@@ -1,27 +1,54 @@
-import React, { useEffect, useState } from "react";
-import Plot from "react-plotly.js";
+import React, { useEffect, useState, useMemo, useRef } from "react";
+import * as d3 from "d3";
 import Select from "react-select";
 
 const InteractiveBubblePlot = () => {
+  const svgRef = useRef();
+  const tooltipRef = useRef();
   const [data, setData] = useState([]);
-  const [uniqueSources, setUniqueSources] = useState([]);
-  const [uniqueTargets, setUniqueTargets] = useState([]);
+  const [columns, setColumns] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedSources, setSelectedSources] = useState([]);
-  const [selectedTargets, setSelectedTargets] = useState([]);
-  const [colorScheme, setColorScheme] = useState("Viridis");
+  const [plotData, setPlotData] = useState(null);
+  const [svgWidth, setSvgWidth] = useState(50);
+  const [svgHeight, setSvgHeight] = useState(500);
 
+  // User-selected columns
+  const [selectedSource, setSelectedSource] = useState(null);
+  const [selectedTarget, setSelectedTarget] = useState(null);
+  const [selectedSourceValues, setSelectedSourceValues] = useState([]);
+  const [selectedTargetValues, setSelectedTargetValues] = useState([]);
+  const [selectedProbability, setSelectedProbability] = useState(null);
+  const [selectedPValue, setSelectedPValue] = useState(null);
+
+  // Allowed P-value thresholds
+  const pValueOptions = [0, 0.01, 0.05, 1];
+  const [selectedPValueIndex, setSelectedPValueIndex] = useState(2);
+
+  // Allowed Top N selections, including "All"
+  const topNOptions = [
+    { value: "All", label: "All Interactions" },
+    { value: 5, label: "Top 5" },
+    { value: 10, label: "Top 10" },
+    { value: 25, label: "Top 25" },
+    { value: 50, label: "Top 50" },
+  ];
+  const [selectedTopN, setSelectedTopN] = useState(topNOptions[0]); // Default to All
+
+  const [colorScheme, setColorScheme] = useState({
+    value: "Viridis",
+    label: "Viridis",
+    scale: d3.interpolateViridis,
+  });
+
+  // Available color schemes
   const colorSchemes = [
-    { value: "Viridis", label: "Viridis" },
-    { value: "Cividis", label: "Cividis" },
-    { value: "Blues", label: "Blues" },
-    { value: "Greens", label: "Greens" },
-    { value: "Reds", label: "Reds" },
-    { value: "Oranges", label: "Oranges" },
-    { value: "Purples", label: "Purples" },
-    { value: "YlGnBu", label: "Yellow-Green-Blue" },
-    { value: "YlOrRd", label: "Yellow-Orange-Red" },
-    { value: "RdBu", label: "Red-Blue" },
+    { value: "Viridis", label: "Viridis", scale: d3.interpolateViridis },
+    { value: "Cividis", label: "Cividis", scale: d3.interpolateCividis },
+    { value: "Blues", label: "Blues", scale: d3.interpolateBlues },
+    { value: "Greens", label: "Greens", scale: d3.interpolateGreens },
+    { value: "Reds", label: "Reds", scale: d3.interpolateReds },
+    { value: "Oranges", label: "Oranges", scale: d3.interpolateOranges },
+    { value: "Purples", label: "Purples", scale: d3.interpolatePurples },
   ];
 
   useEffect(() => {
@@ -35,24 +62,18 @@ const InteractiveBubblePlot = () => {
         }
         const df = await response.json();
 
-        const sources = [...new Set(df.map((item) => item.source))].sort();
-        const targets = [...new Set(df.map((item) => item.target))].sort();
+        if (df.length > 0) {
+          const columnOptions = Object.keys(df[0]).map((col) => ({
+            value: col,
+            label: col,
+          }));
+          setColumns(columnOptions);
+        }
 
-        const formattedSources = sources.map((source) => ({
-          value: source,
-          label: source,
-        }));
-        const formattedTargets = targets.map((target) => ({
-          value: target,
-          label: target,
-        }));
-
-        setUniqueSources(formattedSources);
-        setUniqueTargets(formattedTargets);
         setData(df);
-        setLoading(false);
       } catch (error) {
         console.error("Error fetching data:", error);
+      } finally {
         setLoading(false);
       }
     };
@@ -60,247 +81,331 @@ const InteractiveBubblePlot = () => {
     fetchData();
   }, []);
 
-  const handleSourceChange = (selectedOptions) => {
-    setSelectedSources(
-      selectedOptions ? selectedOptions.map((option) => option.value) : []
-    );
+  // Get unique values from the selected source & target columns
+  const sourceValues = useMemo(() => {
+    if (!selectedSource || !data.length) return [];
+    return [...new Set(data.map((item) => item[selectedSource?.value]))]
+      .filter(Boolean)
+      .map((val) => ({ value: val, label: val }));
+  }, [selectedSource, data]);
+
+  const targetValues = useMemo(() => {
+    if (!selectedTarget || !data.length) return [];
+    return [...new Set(data.map((item) => item[selectedTarget?.value]))]
+      .filter(Boolean)
+      .map((val) => ({ value: val, label: val }));
+  }, [selectedTarget, data]);
+
+  // Convert index to actual P-value
+  const selectedPValueThreshold = pValueOptions[selectedPValueIndex];
+
+  // Handle slider change
+  const handleSliderChange = (event) => {
+    setSelectedPValueIndex(parseInt(event.target.value));
   };
 
-  const handleTargetChange = (selectedOptions) => {
-    setSelectedTargets(
-      selectedOptions ? selectedOptions.map((option) => option.value) : []
-    );
-  };
-
-  const handleColorSchemeChange = (selectedOption) => {
-    setColorScheme(selectedOption.value);
-  };
-
-  const filteredData = data.filter(
-    (item) =>
-      (selectedSources.length === 0 || selectedSources.includes(item.source)) &&
-      (selectedTargets.length === 0 || selectedTargets.includes(item.target))
-  );
-
-  const pvals = filteredData.map((item) =>
-    item.pval !== undefined ? item.pval : 0.01
-  );
-  const minPval = Math.min(...pvals);
-  const maxPval = Math.max(...pvals);
-
-  const bubbleSizes = pvals.map((pval) => {
-    if (maxPval === minPval) {
-      return 50;
+  // Filter and sort data
+  const filteredData = useMemo(() => {
+    if (
+      !selectedSourceValues.length ||
+      !selectedTargetValues.length ||
+      !selectedProbability ||
+      !selectedPValue
+    ) {
+      return [];
     }
-    return ((maxPval - pval) / (maxPval - minPval)) * 100 + 10;
-  });
 
-  const bubbleColors = filteredData.map((item) => item.prob || 0);
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  if (data.length === 0) {
-    return (
-      <p>
-        No data available. Please complete your cell-cell interaction analysis
-        first!
-      </p>
+    // Filter by P-value threshold
+    const filtered = data.filter(
+      (item) =>
+        selectedSourceValues.some(
+          (s) => s.value === item[selectedSource?.value]
+        ) &&
+        selectedTargetValues.some(
+          (t) => t.value === item[selectedTarget?.value]
+        ) &&
+        item[selectedPValue?.value] <= selectedPValueThreshold
     );
-  }
+
+    // Sort by interaction probability (descending)
+    filtered.sort(
+      (a, b) => b[selectedProbability?.value] - a[selectedProbability?.value]
+    );
+
+    // If "All" is selected, return all filtered interactions
+    if (selectedTopN.value === "All") {
+      return filtered;
+    }
+
+    // Keep only the top N interactions for each interaction pair
+    const topNFiltered = [];
+    const interactionGroups = {};
+
+    filtered.forEach((item) => {
+      const pair = item.Interacting_Pair;
+      if (!interactionGroups[pair]) interactionGroups[pair] = [];
+      if (interactionGroups[pair].length < selectedTopN.value) {
+        interactionGroups[pair].push(item);
+        topNFiltered.push(item);
+      }
+    });
+
+    return topNFiltered;
+  }, [
+    data,
+    selectedSource,
+    selectedTarget,
+    selectedSourceValues,
+    selectedTargetValues,
+    selectedProbability,
+    selectedPValue,
+    selectedPValueThreshold,
+    selectedTopN,
+  ]);
+
+  useEffect(() => {
+    setPlotData(filteredData);
+    if (filteredData.length > 0) {
+      setSvgHeight(Math.max(500, filteredData.length * 30));
+      setSvgWidth(Math.max(800, filteredData.length * 15));
+    }
+  }, [filteredData]);
+
+  // Render D3 visualization when plotData updates
+  useEffect(() => {
+    if (!plotData || !plotData.length) return;
+
+    // Set dimensions
+    const width = svgWidth;
+    const height = svgHeight;
+    const margin = { top: 40, right: 40, bottom: 120, left: 150 };
+
+    // Select and clear the SVG
+    const svg = d3
+      .select(svgRef.current)
+      .attr("width", width)
+      .attr("height", height)
+      .style("background", "#1e1e1e")
+      .style("color", "white");
+
+    svg.selectAll("*").remove();
+
+    const tooltip = d3.select(tooltipRef.current);
+
+    // Create scales
+    const xScale = d3
+      .scaleBand()
+      .domain(plotData.map((d) => d.Interacting_Pair))
+      .range([margin.left, width - margin.right])
+      .padding(0.1);
+
+    const yScale = d3
+      .scaleBand()
+      .domain(plotData.map((d) => d.Interaction))
+      .range([height - margin.bottom, margin.top])
+      .padding(0.1);
+
+    const sizeScale = d3
+      .scaleThreshold()
+      .domain([0, 0.01, 0.05, 1]) // P-value thresholds
+      .range([3, 5, 7, 10]); // Corresponding bubble sizes
+
+    const colorScale = d3
+      .scaleSequential(colorScheme.scale)
+      .domain(d3.extent(plotData, (d) => d[selectedProbability?.value]));
+
+    // Add X Axis
+    svg
+      .append("g")
+      .attr("transform", `translate(0,${height - margin.bottom})`)
+      .call(d3.axisBottom(xScale).tickSize(0))
+      .selectAll("text")
+      .attr("transform", "rotate(-45)")
+      .style("text-anchor", "end")
+      .style("fill", "white");
+
+    // Add Y Axis
+    svg
+      .append("g")
+      .attr("transform", `translate(${margin.left},0)`)
+      .call(d3.axisLeft(yScale))
+      .selectAll("text")
+      .style("fill", "white");
+
+    // Add bubbles with hover tooltip
+    svg
+      .selectAll("circle")
+      .data(plotData)
+      .enter()
+      .append("circle")
+      .attr("cx", (d) => xScale(d.Interacting_Pair) + xScale.bandwidth() / 2)
+      .attr("cy", (d) => yScale(d.Interaction) + yScale.bandwidth() / 2)
+      .attr("r", (d) => sizeScale(d[selectedPValue?.value]))
+      .attr("fill", (d) => colorScale(d[selectedProbability?.value]))
+      .attr("stroke", "white")
+      .attr("opacity", 0.8)
+      .on("mouseover", (event, d) => {
+        tooltip
+          .style("visibility", "visible")
+          .html(
+            `
+           <strong>Interaction:</strong> ${d.Interaction}<br>
+           <strong>Interacting Pair:</strong> ${d.Interacting_Pair}<br>
+           <strong>Probability:</strong> ${d[
+             selectedProbability?.value
+           ].toExponential(3)}<br>
+           <strong>P-value:</strong> ${d[selectedPValue?.value]}
+         `
+          )
+          .style("top", `${event.pageY - 10}px`)
+          .style("left", `${event.pageX + 10}px`);
+      })
+      .on("mousemove", (event) => {
+        tooltip
+          .style("top", `${event.pageY - 10}px`)
+          .style("left", `${event.pageX + 10}px`);
+      })
+      .on("mouseout", () => tooltip.style("visibility", "hidden"));
+  }, [plotData, selectedPValue, selectedProbability, colorScheme]);
+
+  // Function to trigger plot rendering
+  const handlePlotButtonClick = () => {
+    setPlotData(filteredData);
+  };
 
   return (
     <div
       style={{
         display: "flex",
-        flexDirection: "column",
         height: "100vh",
-        width: "100vw",
         backgroundColor: "#1e1e1e",
         color: "white",
-        overflow: "hidden",
       }}
     >
+      {/* Sidebar */}
       <div
-        style={{
-          padding: "1rem",
-          backgroundColor: "#333",
-          textAlign: "left",
-          fontWeight: "bold",
-          width: "25vw"
-        }}
+        style={{ width: "25%", padding: "1rem", backgroundColor: "#2e2e2e" }}
       >
-        Interactive Bubble Plot
-      </div>
+        <h4>Customize Bubble Plot</h4>
+        <Select
+          value={selectedSource}
+          options={columns}
+          onChange={setSelectedSource}
+          placeholder="Choose Source Column"
+        />
+        {selectedSource && (
+          <Select
+            isMulti
+            value={selectedSourceValues}
+            options={sourceValues}
+            onChange={setSelectedSourceValues}
+            placeholder="Choose Source Values"
+          />
+        )}
+        <Select
+          value={selectedTarget}
+          options={columns}
+          onChange={setSelectedTarget}
+          placeholder="Choose Target Column"
+        />
+        {selectedTarget && (
+          <Select
+            isMulti
+            value={selectedTargetValues}
+            options={targetValues}
+            onChange={setSelectedTargetValues}
+            placeholder="Choose Target Values"
+          />
+        )}
+        <Select
+          value={selectedProbability}
+          options={columns}
+          onChange={setSelectedProbability}
+          placeholder="Choose Probability Column"
+        />
+        <Select
+          value={selectedPValue}
+          options={columns}
+          onChange={setSelectedPValue}
+          placeholder="Choose P-Value Column"
+        />
+        <Select
+          value={colorScheme}
+          options={colorSchemes}
+          onChange={setColorScheme}
+          placeholder="Choose Color Scheme"
+        />
+        {/* P-value Threshold Slider */}
+        <div style={{ marginTop: "20px" }}>
+          <label
+            style={{
+              display: "block",
+              marginBottom: "5px",
+              fontSize: "14px",
+              fontWeight: "bold",
+            }}
+          >
+            P-value Threshold: {selectedPValueThreshold}
+          </label>
+          <input
+            type="range"
+            min="0"
+            max="3"
+            step="1"
+            value={selectedPValueIndex}
+            onChange={handleSliderChange}
+            list="pvalues"
+            style={{ width: "100%" }}
+          />
+          <datalist id="pvalues">
+            {pValueOptions.map((value, index) => (
+              <option key={index} value={index} label={`${value}`} />
+            ))}
+          </datalist>
 
-      <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-        <div
+          <Select
+            value={selectedTopN}
+            options={topNOptions}
+            onChange={setSelectedTopN}
+            placeholder="Select Top N Interactions"
+          />
+        </div>
+
+        {/* Plot Button */}
+        <button
+          onClick={handlePlotButtonClick}
+          disabled={
+            !selectedSourceValues.length || !selectedTargetValues.length
+          }
           style={{
-            width: "25%",
-            backgroundColor: "#2e2e2e",
-            padding: "1rem",
-            boxShadow: "2px 0px 5px rgba(0, 0, 0, 0.5)",
-            overflowY: "auto",
+            marginTop: "20px",
+            padding: "10px",
+            backgroundColor: "#007bff",
+            color: "white",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer",
+            width: "100%",
           }}
         >
-          <h4>Customize Bubble Plot</h4>
-          <div style={{ marginBottom: "10px" }}>
-            <label htmlFor="source-select" style={{ color: "white" }}>
-              Sources:
-            </label>
-            <Select
-              id="source-select"
-              isMulti
-              options={uniqueSources}
-              onChange={handleSourceChange}
-              placeholder="Select sources..."
-              styles={{
-                control: (provided) => ({
-                  ...provided,
-                  backgroundColor: "#333",
-                  color: "white",
-                  borderColor: "#555",
-                }),
-                menu: (provided) => ({
-                  ...provided,
-                  backgroundColor: "#333",
-                  color: "white",
-                }),
-                option: (provided, state) => ({
-                  ...provided,
-                  backgroundColor: state.isFocused ? "#555" : "#333", // Darker highlight
-                  color: "white",
-                }),
-                multiValue: (provided) => ({
-                  ...provided,
-                  backgroundColor: "#555",
-                  color: "white",
-                }),
-              }}
-            />
-          </div>
-          <div style={{ marginBottom: "10px" }}>
-            <label htmlFor="target-select" style={{ color: "white" }}>
-              Targets:
-            </label>
-            <Select
-              id="target-select"
-              isMulti
-              options={uniqueTargets}
-              onChange={handleTargetChange}
-              placeholder="Select targets..."
-              styles={{
-                control: (provided) => ({
-                  ...provided,
-                  backgroundColor: "#333",
-                  color: "white",
-                  borderColor: "#555",
-                }),
-                menu: (provided) => ({
-                  ...provided,
-                  backgroundColor: "#333",
-                  color: "white",
-                }),
-                option: (provided, state) => ({
-                  ...provided,
-                  backgroundColor: state.isFocused ? "#555" : "#333", // Darker highlight
-                  color: "white",
-                }),
-                multiValue: (provided) => ({
-                  ...provided,
-                  backgroundColor: "#555",
-                  color: "white",
-                }),
-              }}
-            />
-          </div>
-          <div style={{ marginBottom: "10px" }}>
-            <label htmlFor="color-select" style={{ color: "white" }}>
-              Colour Scheme:
-            </label>
-            <Select
-              id="color-select"
-              options={colorSchemes}
-              onChange={handleColorSchemeChange}
-              placeholder="Select colour scheme..."
-              styles={{
-                control: (provided) => ({
-                  ...provided,
-                  backgroundColor: "#333",
-                  color: "white",
-                  borderColor: "#555",
-                }),
-                menu: (provided) => ({
-                  ...provided,
-                  backgroundColor: "#333",
-                  color: "white",
-                }),
-                option: (provided, state) => ({
-                  ...provided,
-                  backgroundColor: state.isFocused ? "#555" : "#333", // Darker highlight
-                  color: "white",
-                }),
-                singleValue: (provided) => ({
-                  ...provided,
-                  color: "white",
-                }),
-              }}
-            />
-          </div>
-        </div>
+          Plot
+        </button>
+      </div>
 
-        <div style={{ flex: 1, padding: "1rem", overflow: "hidden" }}>
-          {selectedSources.length > 0 || selectedTargets.length > 0 ? (
-            <Plot
-              data={[
-                {
-                  x: filteredData.map((item) => item.Interacting_Pair),
-                  y: filteredData.map((item) => item.interaction_name_2),
-                  text: filteredData.map(
-                    (item) =>
-                      `pval: ${item.pval || 0.01}, prob: ${item.prob || 0}`
-                  ),
-                  mode: "markers",
-                  marker: {
-                    size: bubbleSizes,
-                    sizemode: "area",
-                    color: bubbleColors,
-                    colorscale: colorScheme,
-                    showscale: true,
-                  },
-                  type: "scatter",
-                },
-              ]}
-              layout={{
-                title: "Interactive Bubble Plot",
-                paper_bgcolor: "#1e1e1e",
-                plot_bgcolor: "#1e1e1e",
-                font: { color: "white" },
-                xaxis: {
-                  title: "Interacting Pair",
-                  tickangle: -45,
-                  automargin: true,
-                },
-                yaxis: {
-                  title: "Interaction Name",
-                  automargin: true,
-                },
-                margin: {
-                  l: 50,
-                  r: 50,
-                  t: 50,
-                  b: 50,
-                },
-                responsive: true,
-              }}
-              useResizeHandler
-              style={{ width: "100%", height: "100%" }}
-            />
-          ) : (
-            <p>Select sources or targets of interest to begin plotting.</p>
-          )}
-        </div>
+      {/* D3 Visualization */}
+      <div style={{ flex: 1, padding: "1rem" }}>
+        <svg ref={svgRef} width={svgWidth} height={svgHeight}></svg>
+        <div
+          ref={tooltipRef}
+          style={{
+            position: "absolute",
+            backgroundColor: "black",
+            color: "white",
+            padding: "5px",
+            borderRadius: "5px",
+            visibility: "hidden",
+          }}
+        ></div>
       </div>
     </div>
   );

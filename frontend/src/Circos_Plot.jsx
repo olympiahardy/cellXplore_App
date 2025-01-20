@@ -107,8 +107,8 @@ const CircosPlot = () => {
       );
 
       // Define radii for the tracks
-      const innerHeatmapOuterRadius = width / 3 - 40; // Outer edge of the heatmap
-      const outerSegmentOuterRadius = width / 3; // Outer edge of the outer segments
+      const innerHeatmapOuterRadius = width / 3.5 - 40; // Outer edge of the heatmap
+      const outerSegmentOuterRadius = width / 3.7; // Outer edge of the outer segments
 
       // Generate layout for sources and targets
       const uniqueCellTypes = Array.from(
