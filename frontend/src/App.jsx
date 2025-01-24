@@ -11,6 +11,7 @@ import CircosPlot from "./Circos_Plot.jsx";
 import "./App.css";
 const App = () => {
   const [tabIndex, setTabIndex] = useState(0);
+  const [selections, setSelections] = useState({});
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
@@ -79,12 +80,15 @@ const App = () => {
                 flexDirection: "column",
               }}
             >
-              <VitessceVisualization style={{ flex: 1, width: "100%" }} />
+              <VitessceVisualization
+                style={{ flex: 1, width: "100%" }}
+                onSelectionChange={setSelections}
+              />
             </div>
           </TabPanel>
           <TabPanel>
             <div style={{ height: "100%", overflow: "auto" }}>
-              <InteractionDataTable />
+              <InteractionDataTable selections={selections} />
             </div>
           </TabPanel>
           <TabPanel>

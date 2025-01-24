@@ -100,7 +100,7 @@ def get_data_table():
                 if 'liana_res' in zarr_cache.uns:
                     df = zarr_cache.uns["liana_res"]
                     print("DataFrame accessed:", df)
-                    
+                    df = df[df["lr_probs"] > 0]
                     # Convert the DataFrame to JSON format
                     data = df.to_json(orient='records')
                     #print("Data converted to JSON format:", data)
@@ -281,7 +281,59 @@ def get_cellchat_bubble():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
+@app.route('/filter-table', methods=['POST'])
+def filter_table():
+    try:
+        data = request.json  # Receive request data
+        selection_name = data.get("selection_name")  # Get selection name
 
+        if not selection_name:
+            return jsonify({"error": "Selection name not provided"}), 400
+
+        # Retrieve stored selections from previous /process_selections call
+        stored_selections = getattr(filter_table, "stored_selections", {})
+
+        if selection_name not in stored_selections:
+            return jsonify({"error": "Selection not found"}), 404
+
+        selected_barcodes = stored_selections[selection_name]
+        print(f"Selected Barcodes: {selected_barcodes}")
+
+        # Check if the Zarr object is loaded
+        if zarr_cache is not None and 'liana_res' in zarr_cache.uns:
+            metadf = zarr_cache.obs["Cell_Type"]
+
+            # Ensure metadf uses row names (barcodes) correctly
+            metadf = metadf.reindex(selected_barcodes)  # Avoids KeyErrors
+            print(f"Filtered Metadata: {metadf}")
+
+            # Get unique cell types
+            celltypes = metadf.dropna().unique()  # Drop NaN values
+            print(f"Cell Types Found: {celltypes}")
+
+            df = zarr_cache.uns["liana_res"]
+            df = df[df["lr_probs"] > 0]
+
+            # Ensure source and target columns exist
+            if "source" not in df.columns or "target" not in df.columns:
+                return jsonify({"error": "Columns 'source' or 'target' not found in dataset"}), 500
+
+            # Filter dataset based on selected barcodes
+            filtered_df = df[df["source"].isin(celltypes) & df["target"].isin(celltypes)]
+
+            # Convert filtered DataFrame to JSON
+            filtered_data = filtered_df.to_json(orient="records")
+            return Response(filtered_data, mimetype='application/json')
+
+        return jsonify({"error": "liana_res or obs not found in dataset"}), 500
+
+    except Exception as e:
+        print(f"Error in /filter-table: {e}")
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+    
+# Store selections globally for later retrieval
 @app.route('/process_selections', methods=['POST'])
 def process_selections():
     try:
@@ -292,25 +344,14 @@ def process_selections():
             return jsonify({"message": "No selections received"}), 400
 
         print(f"Received Selections: {selections}")
-        
-        # if 'liana_res' in zarr_cache.uns:
-        #     df = zarr_cache.uns["liana_res"]
 
-        #     if "barcode" not in df.columns:
-        #         return jsonify({"error": "Barcode column not found in dataset"}), 500
+        # Store selections for later retrieval in /filter-table
+        filter_table.stored_selections = selections
 
-        #     # Filter dataset based on all selections
-        #     filtered_data = {}
-        #     for name, barcodes in selections.items():
-        #         filtered_df = df[df["barcode"].isin(barcodes)]
-        #         filtered_data[name] = json.loads(filtered_df.to_json(orient="records"))
-
-        #     return jsonify({"filtered_data": filtered_data}), 200
-
-        return jsonify({"error": "liana_res not found in dataset"}), 500
+        return jsonify({"message": "Selections stored successfully"}), 200
 
     except Exception as e:
-        print(f"Error processing selections: {e}")
+        print(f"Error in /process_selections: {e}")
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
