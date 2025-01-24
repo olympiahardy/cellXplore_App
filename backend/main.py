@@ -50,6 +50,7 @@ def generate_config(merged_zarr_file, output_dir, base_dir, sample):
             obs_set_names=["Clusters", "Cell Type"],
             coordination_values={
                 "obsType":"cell",
+                "obsSetSelection":"obsSetSelectionScope",
             },
         ))
 
@@ -58,7 +59,7 @@ def generate_config(merged_zarr_file, output_dir, base_dir, sample):
         feature_list = vc.add_view(cm.FEATURE_LIST, dataset=dataset)
 
 
-        vc.link_views([scatterplot, feature_list, cell_sets], ["obsType"], ["cell"])
+        vc.link_views([scatterplot, feature_list, cell_sets], ["obsType", "obsSetSelection"], ["cell", []])
         vc.layout((scatterplot | (cell_sets / feature_list)))
 
         # Save config
@@ -279,6 +280,41 @@ def get_cellchat_bubble():
             return jsonify({"error": "'Cellchat_Interactions' not found in the specified Zarr file."}), 500
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+
+@app.route('/process_selections', methods=['POST'])
+def process_selections():
+    try:
+        data = request.json  # Get data from request
+        selections = data.get("selections", {})
+
+        if not selections:
+            return jsonify({"message": "No selections received"}), 400
+
+        print(f"Received Selections: {selections}")
+        
+        # if 'liana_res' in zarr_cache.uns:
+        #     df = zarr_cache.uns["liana_res"]
+
+        #     if "barcode" not in df.columns:
+        #         return jsonify({"error": "Barcode column not found in dataset"}), 500
+
+        #     # Filter dataset based on all selections
+        #     filtered_data = {}
+        #     for name, barcodes in selections.items():
+        #         filtered_df = df[df["barcode"].isin(barcodes)]
+        #         filtered_data[name] = json.loads(filtered_df.to_json(orient="records"))
+
+        #     return jsonify({"filtered_data": filtered_data}), 200
+
+        return jsonify({"error": "liana_res not found in dataset"}), 500
+
+    except Exception as e:
+        print(f"Error processing selections: {e}")
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
 
 # Endpoint: Serve hierarchical Zarr files
 @app.route('/datasets/<path:filename>', methods=['GET'])

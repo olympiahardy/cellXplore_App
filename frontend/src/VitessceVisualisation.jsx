@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Vitessce } from "vitessce";
+import isEqual from "lodash.isequal";
 
-const VitessceVisualization = () => {
-  const [config, setConfig] = useState();
+const VitessceVisualization = ({ onSelectionChange }) => {
+  const [config, setConfig] = useState(null);
+  const [newSelections, setSelections] = useState({}); // ✅ Fix: Initialize as an empty object
 
   useEffect(() => {
     fetchConfig();
@@ -20,6 +22,67 @@ const VitessceVisualization = () => {
       console.error("Error fetching config:", error);
     }
   };
+
+  const extractAllSelections = (newConfig) => {
+    try {
+      const additionalObsSets =
+        newConfig?.coordinationSpace?.additionalObsSets?.A;
+      if (!additionalObsSets || !additionalObsSets.tree) return {};
+
+      let selectionsDict = {}; // Dictionary to store selections
+
+      // Traverse the tree
+      additionalObsSets.tree.forEach((node) => {
+        if (node.children) {
+          node.children.forEach((child) => {
+            if (child.name && child.set) {
+              selectionsDict[child.name] = child.set.map(
+                ([barcode]) => barcode
+              );
+            }
+          });
+        }
+      });
+
+      return selectionsDict;
+    } catch (error) {
+      console.error("Error extracting selections:", error);
+      return {};
+    }
+  };
+
+  // Function to send all selections to Flask
+  const sendSelectionsToBackend = async (selections) => {
+    try {
+      const response = await fetch("http://127.0.0.1:5000/process_selections", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ selections }), // Send entire selections dictionary
+      });
+
+      const result = await response.json();
+      console.log("Response from Flask:", result);
+    } catch (error) {
+      console.error("Error sending selections to backend:", error);
+    }
+  };
+
+  const handleConfigChange = useCallback(
+    (newConfig) => {
+      const newSelections = extractAllSelections(newConfig);
+
+      console.log("Updated Selections:", newSelections);
+
+      setSelections(newSelections); // Store selections in state
+      if (onSelectionChange) {
+        onSelectionChange(newSelections); // ✅ Fix: Only call if prop exists
+      }
+      sendSelectionsToBackend(newSelections); // Send to Flask
+    },
+    [setSelections, onSelectionChange]
+  );
 
   if (!config) return <div>Loading...</div>;
 
@@ -52,6 +115,7 @@ const VitessceVisualization = () => {
           theme="dark"
           height={window.innerHeight - 120}
           width="100%"
+          onConfigChange={handleConfigChange}
         />
       </div>
     </div>

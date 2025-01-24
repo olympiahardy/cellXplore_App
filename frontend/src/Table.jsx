@@ -116,12 +116,13 @@ function InteractionDataTable() {
           fontStyle: "italic",
         }}
       >
-        Here we can see a nice clear tabular view of our interaction results! 
-        Click the three dots on each column of the table to sort, filter and search
-        results quickly. You can also sort columns by clicking on the column headers.
-        Columns can also be hidden if you feel they are irrelavent, and can be restored
-        whenever you need them again. Use the controls at the bottom of the table to navigate
-        between the pages of results.
+        Here we can see a nice clear tabular view of our interaction results!
+        Click the three dots on each column of the table to sort, filter and
+        search results quickly. You can also sort columns by clicking on the
+        column headers. Columns can also be hidden if you feel they are
+        irrelavent, and can be restored whenever you need them again. Use the
+        controls at the bottom of the table to navigate between the pages of
+        results.
       </div>
 
       <div style={{ flex: 1, padding: "1rem" }}>
