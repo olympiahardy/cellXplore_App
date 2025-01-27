@@ -1,10 +1,12 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import VitessceVisualization from "./App.jsx";
+import App from "./App.jsx"; // Assuming the new App component is in App.jsx
 import "./index.css";
+import "./App.css"
+const root = ReactDOM.createRoot(document.getElementById("root"));
 
-ReactDOM.createRoot(document.getElementById("root")).render(
+root.render(
   <React.StrictMode>
-    <VitessceVisualization />
+    <App />
   </React.StrictMode>
 );

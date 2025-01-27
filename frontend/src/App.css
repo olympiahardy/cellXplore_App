@@ -40,3 +40,16 @@
 .read-the-docs {
   color: #888;
 }
+
+.circos-tooltip {
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 8px;
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 10000;
+  font-size: 14px;
+  opacity: 0; /* Start invisible */
+  transition: opacity 0.2s ease; /* Smooth transition */
+}

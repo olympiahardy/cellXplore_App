@@ -1,71 +1,125 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useState } from "react";
+import { Tab, Tabs, TabList, TabPanel } from "react-tabs";
+import "react-tabs/style/react-tabs.css";
+import VitessceVisualization from "./VitessceVisualisation.jsx";
+import InteractionDataTable from "./Table.jsx";
+import FrequencyHeatmap from "./Frequency_Heatmap.jsx";
+import InteractiveBubblePlot from "./Bubble_Plot.jsx";
+import StackedProportionBarplot from "./Pathway_Proportion.jsx";
+import SankeyPlot from "./Sankey_Plot.jsx";
+import CircosPlot from "./Circos_Plot.jsx";
 import "./App.css";
-import { Vitessce } from "vitessce";
-import { Resizable } from "react-resizable";
-import "react-resizable/css/styles.css"; 
-console.log(Resizable);
-import Draggable from "react-draggable";
-console.log(Draggable);
-
-// import { vcConfig } from "./my-view-config";
-const VitessceVisualization = () => {
-  const [config, setConfig] = useState();
-  const [width, setWidth] = useState(800);
-  const [height, setHeight] = useState(800);
-  const resizableRef = useRef(null);
-
-  useEffect(() => {
-    fetchConfig();
-  }, []);
-
-  const fetchConfig = async () => {
-    try {
-      const response = await fetch("http://127.0.0.1:5000/get_anndata");
-      console.log("got response", response);
-      const data = await response.json();
-      console.log("data", data);
-      setConfig(data);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    }
-  };
-
-  const onResize = (event, { size }) => {
-    setWidth(size.width);
-    setHeight(size.height);
-  };
-
-  if (!config) return <div>Loading...</div>;
+const App = () => {
+  const [tabIndex, setTabIndex] = useState(0);
+  const [selections, setSelections] = useState({});
 
   return (
-    <Draggable handle=".handle">
-      <div style={{ border: "1px solid #ccc", padding: "10px", position: "relative" }}>
-        {/* This handle will be draggable */}
-        <div className="handle" style={{ cursor: "move", backgroundColor: "#eee", padding: "10px", marginBottom: "10px" }}>
-          Drag here
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
+      {/* Header with Logo, Title, and Sidebar */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          backgroundColor: "#1e1e1e",
+          color: "white",
+          padding: "1rem",
+          boxShadow: "0px 2px 5px rgba(0, 0, 0, 0.3)",
+        }}
+      >
+        {/* Logo and Title */}
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <img
+            src="/cellXplore.png"
+            alt="cellXplore Logo"
+            style={{ width: "80px", height: "80px", marginRight: "10px" }}
+          />
+          <h1 style={{ margin: 0, fontSize: "2rem" }}>cellXplore</h1>
         </div>
 
-        {/* The Resizable section below remains unaffected by the drag */}
-        <Resizable
-          width={width}
-          height={height}
-          onResize={onResize}
-          minConstraints={[300, 300]} // Optional min size
-          maxConstraints={[1200, 1200]} // Optional max size
+        {/* Sidebar */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-end",
+            textAlign: "right",
+          }}
         >
-          <div style={{ width: `${width}px`, height: `${height}px`, overflow: "hidden" }}>
-            {/* Vitessce component with dynamic width and height */}
-            <Vitessce
-              config={config}
-              width={width}
-              height={height}
-              theme="dark"
-            />
-          </div>
-        </Resizable>
+          <h2 style={{ margin: 0, fontSize: "1.5rem" }}>
+            Interactively explore cellular interactions
+          </h2>
+          <p style={{ margin: 0, fontSize: "1rem" }}>
+            Select a tab to view different visualizations
+          </p>
+        </div>
       </div>
-    </Draggable>
+
+      {/* Main Content */}
+      <div style={{ flex: 1, backgroundColor: "#242424", padding: "1rem" }}>
+        <Tabs
+          selectedIndex={tabIndex}
+          onSelect={(index) => setTabIndex(index)}
+          style={{ height: "100%" }}
+        >
+          <TabList>
+            <Tab>Single Cell View</Tab>
+            <Tab>Interactions Table</Tab>
+            <Tab>Pathway Proportions</Tab>
+            <Tab>Bubble Plot</Tab>
+            <Tab>Heatmap</Tab>
+            <Tab>Sankey Plot</Tab>
+            <Tab>Circos Plot</Tab>
+          </TabList>
+
+          <TabPanel>
+            <div
+              style={{
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              <VitessceVisualization
+                style={{ flex: 1, width: "100%" }}
+                onSelectionChange={setSelections}
+              />
+            </div>
+          </TabPanel>
+          <TabPanel>
+            <div style={{ height: "100%", overflow: "auto" }}>
+              <InteractionDataTable selections={selections} />
+            </div>
+          </TabPanel>
+          <TabPanel>
+            <div style={{ height: "100%", overflow: "auto" }}>
+              <StackedProportionBarplot />
+            </div>
+          </TabPanel>
+          <TabPanel>
+            <div style={{ height: "100%", overflow: "auto" }}>
+              <InteractiveBubblePlot selections={selections} />
+            </div>
+          </TabPanel>
+          <TabPanel>
+            <div style={{ height: "100%", overflow: "auto" }}>
+              <FrequencyHeatmap selections={selections} />
+            </div>
+          </TabPanel>
+          <TabPanel>
+            <div style={{ height: "100%", overflow: "auto" }}>
+              <SankeyPlot />
+            </div>
+          </TabPanel>
+          <TabPanel>
+            <div style={{ height: "100%", overflow: "auto" }}>
+              <CircosPlot selections={selections} />
+            </div>
+          </TabPanel>
+        </Tabs>
+      </div>
+    </div>
   );
 };
 
-export default VitessceVisualization;
+export default App;
