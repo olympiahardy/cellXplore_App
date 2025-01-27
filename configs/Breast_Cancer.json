@@ -1,11 +1,11 @@
 {
     "version": "1.0.16",
-    "name": "Breast Cancer Single cell",
+    "name": "Breast Cancer Multi-Modal",
     "description": "",
     "datasets": [
         {
             "uid": "A",
-            "name": "Space Ranger outputs",
+            "name": "Single-Cell RNA",
             "files": [
                 {
                     "fileType": "anndata.zarr",
@@ -36,6 +36,45 @@
                         }
                     },
                     "coordinationValues": {
+                        "obsType": "cell",
+                        "obsSetSelection": "obsSetSelectionScope"
+                    }
+                }
+            ]
+        },
+        {
+            "uid": "B",
+            "name": "Xenium Spatial",
+            "files": [
+                {
+                    "fileType": "spatialdata.zarr",
+                    "url": "http://127.0.0.1:5000/datasets/Breast_Cancer_Xenium_processed.zarr",
+                    "options": {
+                        "obsFeatureMatrix": {
+                            "path": "tables/table/X/data"
+                        },
+                        "obsSets": {
+                            "obsSets": [
+                                {
+                                    "name": "Clusters",
+                                    "path": "tables/table/obs/Clusters"
+                                }
+                            ],
+                            "tablePath": "tables/table"
+                        },
+                        "obsSpots": {
+                            "path": "shapes/cell_boundaries",
+                            "tablePath": "tables/table"
+                        },
+                        "image": {
+                            "path": "images/morphology_focus"
+                        },
+                        "labels": {
+                            "path": "labels/cell_labels",
+                            "tablePath": "tables/table"
+                        }
+                    },
+                    "coordinationValues": {
                         "obsType": "cell"
                     }
                 }
@@ -44,13 +83,18 @@
     ],
     "coordinationSpace": {
         "dataset": {
-            "A": "A"
+            "A": "A",
+            "B": "B"
         },
         "embeddingType": {
             "A": "UMAP"
         },
         "obsType": {
-            "A": "cell"
+            "A": "cell",
+            "B": "cell"
+        },
+        "obsSetSelection": {
+            "A": []
         }
     },
     "layout": [
@@ -59,29 +103,54 @@
             "coordinationScopes": {
                 "dataset": "A",
                 "embeddingType": "A",
-                "obsType": "A"
+                "obsType": "A",
+                "obsSetSelection": "A"
             },
             "x": 0.0,
-            "y": 0,
-            "w": 6.0,
-            "h": 12
-        },
-        {
-            "component": "obsSets",
-            "coordinationScopes": {
-                "dataset": "A",
-                "obsType": "A"
-            },
-            "x": 6.0,
             "y": 0.0,
             "w": 6.0,
             "h": 6.0
         },
         {
+            "component": "obsSets",
+            "coordinationScopes": {
+                "dataset": "A",
+                "obsType": "A",
+                "obsSetSelection": "A"
+            },
+            "x": 6.0,
+            "y": 0.0,
+            "w": 6.0,
+            "h": 3.0
+        },
+        {
             "component": "featureList",
             "coordinationScopes": {
                 "dataset": "A",
-                "obsType": "A"
+                "obsType": "A",
+                "obsSetSelection": "A"
+            },
+            "x": 6.0,
+            "y": 3.0,
+            "w": 6.0,
+            "h": 3.0
+        },
+        {
+            "component": "spatial",
+            "coordinationScopes": {
+                "dataset": "B",
+                "obsType": "B"
+            },
+            "x": 0.0,
+            "y": 6.0,
+            "w": 6.0,
+            "h": 6.0
+        },
+        {
+            "component": "obsSets",
+            "coordinationScopes": {
+                "dataset": "B",
+                "obsType": "B"
             },
             "x": 6.0,
             "y": 6.0,

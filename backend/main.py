@@ -21,10 +21,12 @@ CORS(app, origins=["http://localhost:5174"])
 zarr_cache = None 
 
 # Constants
+# Paths
 MERGED_ZARR_FILE = "sc_FPPE_breast_cancer.zarr"
+XENIUM_ZARR_FILE = "Breast_Cancer_Xenium_processed.zarr"  # Xenium dataset
 CONFIG_DIR = "/Users/olympia/cellXplore_App/configs/"
 BASE_DIR = "/Users/olympia/cellXplore_App/datasets/"
-SAMPLE_NAME = "Breast_Cancer"  # Replace this with the desired sample
+SAMPLE_NAME = "Breast_Cancer"  # Sample name
 
 def load_cached_zarr():
     global zarr_cache
@@ -34,47 +36,70 @@ def load_cached_zarr():
 # Load the Zarr file at application startup
 load_cached_zarr()
 
-# Generate a single config file for the sample
-def generate_config(merged_zarr_file, output_dir, base_dir, sample):
+def generate_config(merged_zarr_file, xenium_zarr_file, output_dir, base_dir, sample):
     try:
         os.makedirs(output_dir, exist_ok=True)
 
-        # Vitessce configuration
-        vc = VitessceConfig(schema_version="1.0.16", name='Breast Cancer Single cell', base_dir=base_dir)
-        dataset = vc.add_dataset(name='Space Ranger outputs').add_object(AnnDataWrapper(
-            adata_path=merged_zarr_file, # Relative to BASE_DIR (because we specified base_dir in the VitessceConfig constructor)
+        # Initialize Vitessce Configuration
+        vc = VitessceConfig(schema_version="1.0.16", name='Breast Cancer Multi-Modal', base_dir=base_dir)
+
+        # Single-Cell Dataset (scRNA-seq)
+        sc_dataset = vc.add_dataset(name='Single-Cell RNA').add_object(AnnDataWrapper(
+            adata_path=merged_zarr_file,
             obs_feature_matrix_path="X",
             obs_embedding_paths=["obsm/X_umap"],
             obs_embedding_names=["UMAP"],
             obs_set_paths=["obs/clusters", "obs/Cell_Type"],
             obs_set_names=["Clusters", "Cell Type"],
             coordination_values={
-                "obsType":"cell",
-                "obsSetSelection":"obsSetSelectionScope",
+                "obsType": "cell",
+                "obsSetSelection": "obsSetSelectionScope",
             },
         ))
 
-        scatterplot = vc.add_view(cm.SCATTERPLOT, dataset=dataset, mapping="UMAP")
-        cell_sets = vc.add_view(cm.OBS_SETS, dataset=dataset)
-        feature_list = vc.add_view(cm.FEATURE_LIST, dataset=dataset)
+        # Xenium Spatial Dataset
+        xenium_dataset = vc.add_dataset(name='Xenium Spatial').add_object(SpatialDataWrapper(
+            sdata_path=xenium_zarr_file,  # Path to Xenium dataset
+            image_path="images/morphology_focus",  # Adjust this based on your Zarr file structure
+            obs_feature_matrix_path="tables/table/X/data",  # Adjust this based on Xenium data
+            obs_spatial_path="tables/table/obsm/spatial",  # Spatial coordinates of cells
+            obs_set_paths=["tables/table/obs/Clusters"],  # Cluster annotations
+            obs_set_names=["Clusters"],
+            obs_spots_path="shapes/cell_boundaries",
+            labels_path="labels/cell_labels",
+            coordination_values={"obsType": "cell"},
+        ))
 
+        # Views for Single-Cell Data
+        scatterplot = vc.add_view(cm.SCATTERPLOT, dataset=sc_dataset, mapping="UMAP")
+        cell_sets = vc.add_view(cm.OBS_SETS, dataset=sc_dataset)
+        feature_list = vc.add_view(cm.FEATURE_LIST, dataset=sc_dataset)
 
+        # Views for Xenium Spatial Data
+        spatial = vc.add_view(cm.SPATIAL, dataset=xenium_dataset)
+        xenium_obs_sets = vc.add_view(cm.OBS_SETS, dataset=xenium_dataset)
+
+        # Link views appropriately
         vc.link_views([scatterplot, feature_list, cell_sets], ["obsType", "obsSetSelection"], ["cell", []])
-        vc.layout((scatterplot | (cell_sets / feature_list)))
+        vc.link_views([spatial, xenium_obs_sets], ["obsType"], ["cell"])
 
-        # Save config
+        # Layout arrangement
+        vc.layout((scatterplot / spatial) | (cell_sets / feature_list / xenium_obs_sets))
+
+        # Save the generated configuration
         config_dict = vc.to_dict(base_url="http://127.0.0.1:5000/datasets")
         output_path = os.path.join(output_dir, f"{sample}.json")
         with open(output_path, "w") as json_file:
             json.dump(config_dict, json_file, indent=4)
 
-        print(f"Configuration generated for {sample}")
+        print(f"Configuration generated for {sample} with Single-Cell and Xenium datasets")
+    
     except Exception as e:
         print(f"Error generating configuration: {str(e)}")
         traceback.print_exc()
 
-# Generate config on startup
-generate_config(MERGED_ZARR_FILE, CONFIG_DIR, BASE_DIR, SAMPLE_NAME)
+# Generate config with both datasets
+generate_config(MERGED_ZARR_FILE, XENIUM_ZARR_FILE, CONFIG_DIR, BASE_DIR, SAMPLE_NAME)
 
 @app.route('/get_config', methods=['GET'])
 def get_config():
@@ -246,7 +271,7 @@ def get_cellchat_data():
         if 'liana_res' in zarr_cache.uns:
             df = zarr_cache.uns["liana_res"]
             df = df[df["lr_probs"] > 0]
-            df = df[df["cellchat_pvals"] <= 0.05]
+            # df = df[df["cellchat_pvals"] <= 0.05]
             print("Bubble Plot DataFrame accessed:", df)
             # Convert the DataFrame to JSON format (ensure 'source' and 'target' columns exist)
             data = df[['source', 'target']].to_json(orient='records')

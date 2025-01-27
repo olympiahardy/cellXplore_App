@@ -98,12 +98,12 @@ const App = () => {
           </TabPanel>
           <TabPanel>
             <div style={{ height: "100%", overflow: "auto" }}>
-              <InteractiveBubblePlot />
+              <InteractiveBubblePlot selections={selections} />
             </div>
           </TabPanel>
           <TabPanel>
             <div style={{ height: "100%", overflow: "auto" }}>
-              <FrequencyHeatmap />
+              <FrequencyHeatmap selections={selections} />
             </div>
           </TabPanel>
           <TabPanel>
@@ -113,7 +113,7 @@ const App = () => {
           </TabPanel>
           <TabPanel>
             <div style={{ height: "100%", overflow: "auto" }}>
-              <CircosPlot />
+              <CircosPlot selections={selections} />
             </div>
           </TabPanel>
         </Tabs>

@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo, useRef } from "react";
 import * as d3 from "d3";
 import Select from "react-select";
 
-const InteractiveBubblePlot = () => {
+const InteractiveBubblePlot = ({ selections }) => {
   const svgRef = useRef();
   const tooltipRef = useRef();
   const [data, setData] = useState([]);
@@ -11,6 +11,7 @@ const InteractiveBubblePlot = () => {
   const [plotData, setPlotData] = useState(null);
   const [svgWidth, setSvgWidth] = useState(50);
   const [svgHeight, setSvgHeight] = useState(500);
+  const [selectedSelection, setSelectedSelection] = useState("");
 
   // User-selected columns
   const [selectedSource, setSelectedSource] = useState(null);
@@ -50,6 +51,31 @@ const InteractiveBubblePlot = () => {
     { value: "Oranges", label: "Oranges", scale: d3.interpolateOranges },
     { value: "Purples", label: "Purples", scale: d3.interpolatePurples },
   ];
+
+  // Function to fetch filtered data when a selection is chosen
+  const fetchFilteredData = async () => {
+    if (!selectedSelection) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch("http://127.0.0.1:5000/filter-table", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ selection_name: selectedSelection }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const filteredData = await response.json();
+      setData(filteredData);
+    } catch (error) {
+      console.error("Error fetching filtered data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -167,7 +193,7 @@ const InteractiveBubblePlot = () => {
     setPlotData(filteredData);
     if (filteredData.length > 0) {
       setSvgHeight(Math.max(500, filteredData.length * 30));
-      setSvgWidth(Math.max(800, filteredData.length * 15));
+      setSvgWidth(500);
     }
   }, [filteredData]);
 
@@ -286,63 +312,300 @@ const InteractiveBubblePlot = () => {
       <div
         style={{ width: "25%", padding: "1rem", backgroundColor: "#2e2e2e" }}
       >
-        <h4>Customize Bubble Plot</h4>
-        <Select
-          value={selectedSource}
-          options={columns}
-          onChange={setSelectedSource}
-          placeholder="Choose Source Column"
-        />
+        <h4
+          style={{ color: "white", textAlign: "center", marginBottom: "15px" }}
+        >
+          Customize Bubble Plot
+        </h4>
+
+        {/* Selection Dropdown & Filter Button */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: "1rem",
+            backgroundColor: "#444",
+            marginBottom: "20px", // Added spacing
+          }}
+        >
+          <label style={{ color: "white", marginRight: "10px" }}>
+            Select a Filter:
+          </label>
+          <select
+            value={selectedSelection}
+            onChange={(e) => setSelectedSelection(e.target.value)}
+            style={{ padding: "5px", marginRight: "10px" }}
+          >
+            <option value="">All Data</option>
+            {Object.keys(selections).map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+          <button onClick={fetchFilteredData} style={{ padding: "5px 10px" }}>
+            Apply Filter
+          </button>
+        </div>
+
+        {/* Dropdown Sections with Spacing */}
+        <div style={{ marginBottom: "15px" }}>
+          <Select
+            value={selectedSource}
+            options={columns}
+            onChange={setSelectedSource}
+            placeholder="Choose Source Column"
+            styles={{
+              control: (provided) => ({
+                ...provided,
+                backgroundColor: "#333",
+                color: "white",
+                borderColor: "#555",
+              }),
+              menu: (provided) => ({
+                ...provided,
+                backgroundColor: "#333",
+                color: "white",
+              }),
+              option: (provided, state) => ({
+                ...provided,
+                backgroundColor: state.isFocused ? "#555" : "#333",
+                color: "white",
+              }),
+              singleValue: (provided) => ({
+                ...provided,
+                color: "white", // Ensures selected value text is white
+              }),
+            }}
+          />
+        </div>
+
         {selectedSource && (
-          <Select
-            isMulti
-            value={selectedSourceValues}
-            options={sourceValues}
-            onChange={setSelectedSourceValues}
-            placeholder="Choose Source Values"
-          />
+          <div style={{ marginBottom: "15px" }}>
+            <Select
+              isMulti
+              value={selectedSourceValues}
+              options={sourceValues}
+              onChange={setSelectedSourceValues}
+              placeholder="Choose Source Values"
+              styles={{
+                control: (provided) => ({
+                  ...provided,
+                  backgroundColor: "#333",
+                  color: "white",
+                  borderColor: "#555",
+                }),
+                menu: (provided) => ({
+                  ...provided,
+                  backgroundColor: "#333",
+                  color: "white",
+                }),
+                option: (provided, state) => ({
+                  ...provided,
+                  backgroundColor: state.isFocused ? "#555" : "#333",
+                  color: "white",
+                }),
+                multiValue: (provided) => ({
+                  ...provided,
+                  backgroundColor: "#555",
+                  color: "white",
+                }),
+              }}
+            />
+          </div>
         )}
-        <Select
-          value={selectedTarget}
-          options={columns}
-          onChange={setSelectedTarget}
-          placeholder="Choose Target Column"
-        />
+
+        <div style={{ marginBottom: "15px" }}>
+          <Select
+            value={selectedTarget}
+            options={columns}
+            onChange={setSelectedTarget}
+            placeholder="Choose Target Column"
+            styles={{
+              control: (provided) => ({
+                ...provided,
+                backgroundColor: "#333",
+                color: "white",
+                borderColor: "#555",
+              }),
+              menu: (provided) => ({
+                ...provided,
+                backgroundColor: "#333",
+                color: "white",
+              }),
+              option: (provided, state) => ({
+                ...provided,
+                backgroundColor: state.isFocused ? "#555" : "#333",
+                color: "white",
+              }),
+              singleValue: (provided) => ({
+                ...provided,
+                color: "white", // Ensures selected value text is white
+              }),
+            }}
+          />
+        </div>
+
         {selectedTarget && (
-          <Select
-            isMulti
-            value={selectedTargetValues}
-            options={targetValues}
-            onChange={setSelectedTargetValues}
-            placeholder="Choose Target Values"
-          />
+          <div style={{ marginBottom: "15px" }}>
+            <Select
+              isMulti
+              value={selectedTargetValues}
+              options={targetValues}
+              onChange={setSelectedTargetValues}
+              placeholder="Choose Target Values"
+              styles={{
+                control: (provided) => ({
+                  ...provided,
+                  backgroundColor: "#333",
+                  color: "white",
+                  borderColor: "#555",
+                }),
+                menu: (provided) => ({
+                  ...provided,
+                  backgroundColor: "#333",
+                  color: "white",
+                }),
+                option: (provided, state) => ({
+                  ...provided,
+                  backgroundColor: state.isFocused ? "#555" : "#333",
+                  color: "white",
+                }),
+                multiValue: (provided) => ({
+                  ...provided,
+                  backgroundColor: "#555",
+                  color: "white",
+                }),
+              }}
+              styles={{
+                control: (provided) => ({
+                  ...provided,
+                  backgroundColor: "#333",
+                  color: "white",
+                  borderColor: "#555",
+                }),
+                menu: (provided) => ({
+                  ...provided,
+                  backgroundColor: "#333",
+                  color: "white",
+                }),
+                option: (provided, state) => ({
+                  ...provided,
+                  backgroundColor: state.isFocused ? "#555" : "#333",
+                  color: "white",
+                }),
+                singleValue: (provided) => ({
+                  ...provided,
+                  color: "white", // Ensures selected value text is white
+                }),
+              }}
+            />
+          </div>
         )}
-        <Select
-          value={selectedProbability}
-          options={columns}
-          onChange={setSelectedProbability}
-          placeholder="Choose Probability Column"
-        />
-        <Select
-          value={selectedPValue}
-          options={columns}
-          onChange={setSelectedPValue}
-          placeholder="Choose P-Value Column"
-        />
-        <Select
-          value={colorScheme}
-          options={colorSchemes}
-          onChange={setColorScheme}
-          placeholder="Choose Color Scheme"
-        />
+
+        <div style={{ marginBottom: "15px" }}>
+          <Select
+            value={selectedProbability}
+            options={columns}
+            onChange={setSelectedProbability}
+            placeholder="Choose Probability Column"
+            styles={{
+              control: (provided) => ({
+                ...provided,
+                backgroundColor: "#333",
+                color: "white",
+                borderColor: "#555",
+              }),
+              menu: (provided) => ({
+                ...provided,
+                backgroundColor: "#333",
+                color: "white",
+              }),
+              option: (provided, state) => ({
+                ...provided,
+                backgroundColor: state.isFocused ? "#555" : "#333",
+                color: "white",
+              }),
+              singleValue: (provided) => ({
+                ...provided,
+                color: "white", // Ensures selected value text is white
+              }),
+            }}
+          />
+        </div>
+
+        <div style={{ marginBottom: "15px" }}>
+          <Select
+            value={selectedPValue}
+            options={columns}
+            onChange={setSelectedPValue}
+            placeholder="Choose P-Value Column"
+            styles={{
+              control: (provided) => ({
+                ...provided,
+                backgroundColor: "#333",
+                color: "white",
+                borderColor: "#555",
+              }),
+              menu: (provided) => ({
+                ...provided,
+                backgroundColor: "#333",
+                color: "white",
+              }),
+              option: (provided, state) => ({
+                ...provided,
+                backgroundColor: state.isFocused ? "#555" : "#333",
+                color: "white",
+              }),
+              singleValue: (provided) => ({
+                ...provided,
+                color: "white", // Ensures selected value text is white
+              }),
+            }}
+          />
+        </div>
+
+        <div style={{ marginBottom: "15px" }}>
+          <Select
+            value={colorScheme}
+            options={colorSchemes}
+            onChange={setColorScheme}
+            placeholder="Choose Color Scheme"
+            styles={{
+              control: (provided) => ({
+                ...provided,
+                backgroundColor: "#333",
+                color: "white",
+                borderColor: "#555",
+              }),
+              menu: (provided) => ({
+                ...provided,
+                backgroundColor: "#333",
+                color: "white",
+              }),
+              option: (provided, state) => ({
+                ...provided,
+                backgroundColor: state.isFocused ? "#555" : "#333",
+                color: "white",
+              }),
+              singleValue: (provided) => ({
+                ...provided,
+                color: "white", // Ensures selected value text is white
+              }),
+            }}
+          />
+        </div>
+
         {/* P-value Threshold Slider */}
-        <div style={{ marginTop: "20px" }}>
+        <div style={{ marginBottom: "20px" }}>
           <label
             style={{
               display: "block",
               marginBottom: "5px",
               fontSize: "14px",
               fontWeight: "bold",
+              color: "white",
             }}
           >
             P-value Threshold: {selectedPValueThreshold}
@@ -363,12 +626,36 @@ const InteractiveBubblePlot = () => {
             ))}
           </datalist>
 
-          <Select
-            value={selectedTopN}
-            options={topNOptions}
-            onChange={setSelectedTopN}
-            placeholder="Select Top N Interactions"
-          />
+          <div style={{ marginTop: "15px" }}>
+            <Select
+              value={selectedTopN}
+              options={topNOptions}
+              onChange={setSelectedTopN}
+              placeholder="Select Top N Interactions"
+              styles={{
+                control: (provided) => ({
+                  ...provided,
+                  backgroundColor: "#333",
+                  color: "white",
+                  borderColor: "#555",
+                }),
+                menu: (provided) => ({
+                  ...provided,
+                  backgroundColor: "#333",
+                  color: "white",
+                }),
+                option: (provided, state) => ({
+                  ...provided,
+                  backgroundColor: state.isFocused ? "#555" : "#333",
+                  color: "white",
+                }),
+                singleValue: (provided) => ({
+                  ...provided,
+                  color: "white", // Ensures selected value text is white
+                }),
+              }}
+            />
+          </div>
         </div>
 
         {/* Plot Button */}

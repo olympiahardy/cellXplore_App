@@ -4,7 +4,7 @@ import Select from "react-select";
 import * as d3 from "d3";
 import "./App.css";
 
-const CircosPlot = () => {
+const CircosPlot = ({ selections }) => {
   const containerRef = useRef(null);
   const tooltipRef = useRef(null);
   const [data, setData] = useState([]);
@@ -12,6 +12,7 @@ const CircosPlot = () => {
   const [colorMapping, setColorMapping] = useState({});
   const [selectedSources, setSelectedSources] = useState([]);
   const [selectedTargets, setSelectedTargets] = useState([]);
+  const [selectedSelection, setSelectedSelection] = useState("");
 
   // Generate a color palette
   const scPalette = (n) => {
@@ -46,8 +47,23 @@ const CircosPlot = () => {
     return colorSpace.slice(0, n);
   };
 
+  // Function to update color mapping for cell types
+  const updateColorMapping = (dataset) => {
+    const uniqueCellTypes = Array.from(
+      new Set(dataset.flatMap((item) => [item.source, item.target]))
+    );
+    const palette = scPalette(uniqueCellTypes.length);
+    const colorMap = uniqueCellTypes.reduce((acc, cellType, index) => {
+      acc[cellType] = palette[index];
+      return acc;
+    }, {});
+    setColorMapping(colorMap);
+  };
+
+  // Function to fetch full dataset initially
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
         const response = await fetch("http://127.0.0.1:5000/circos");
         if (!response.ok) {
@@ -61,27 +77,45 @@ const CircosPlot = () => {
           prob: parseFloat(row.prob) || 0.1,
         }));
         setData(processedData);
-
-        // Create color mapping
-        const uniqueCellTypes = Array.from(
-          new Set(processedData.flatMap((item) => [item.source, item.target]))
-        );
-        const palette = scPalette(uniqueCellTypes.length);
-        const colorMap = uniqueCellTypes.reduce((acc, cellType, index) => {
-          acc[cellType] = palette[index];
-          return acc;
-        }, {});
-        setColorMapping(colorMap);
-
-        setLoading(false);
+        updateColorMapping(processedData);
       } catch (error) {
         console.error("Error fetching Circos data:", error);
+      } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
+    fetchData(); // Load full dataset initially
   }, []);
+
+  // Function to fetch filtered data when "Apply Filter" is clicked
+  const fetchFilteredData = async () => {
+    if (!selectedSelection) {
+      fetchData(); // Reset to full dataset if "All Data" is selected
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch("http://127.0.0.1:5000/filter-table", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ selection_name: selectedSelection }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const filteredData = await response.json();
+      setData(filteredData);
+      updateColorMapping(filteredData); // ✅ Now correctly defined before use
+    } catch (error) {
+      console.error("Error fetching filtered Circos data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (
@@ -404,6 +438,37 @@ const CircosPlot = () => {
           }}
         >
           <h4>Customize Circos Plot</h4>
+          {/* Selection Dropdown */}
+          <div style={{ marginBottom: "10px" }}>
+            <label htmlFor="filter-select" style={{ color: "white" }}>
+              Select a Filter:
+            </label>
+            <select
+              id="filter-select"
+              value={selectedSelection}
+              onChange={(e) => setSelectedSelection(e.target.value)}
+              style={{
+                padding: "5px",
+                backgroundColor: "#444",
+                color: "white",
+                borderColor: "#555",
+                width: "100%",
+              }}
+            >
+              <option value="">All Data</option>
+              {Object.keys(selections).map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={fetchFilteredData}
+              style={{ marginTop: "10px", padding: "5px 10px" }}
+            >
+              Apply Filter
+            </button>
+          </div>
           <div style={{ marginBottom: "10px" }}>
             <label htmlFor="source-select" style={{ color: "white" }}>
               Sources:
