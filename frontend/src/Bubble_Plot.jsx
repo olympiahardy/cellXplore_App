@@ -5,6 +5,7 @@ import Select from "react-select";
 const InteractiveBubblePlot = ({ selections }) => {
   const svgRef = useRef();
   const tooltipRef = useRef();
+
   const [data, setData] = useState([]);
   const [columns, setColumns] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -216,6 +217,29 @@ const InteractiveBubblePlot = ({ selections }) => {
 
     svg.selectAll("*").remove();
 
+    // Create a tooltip group INSIDE the SVG
+    const tooltipGroup = svg
+      .append("g")
+      .style("pointer-events", "none")
+      .style("visibility", "hidden");
+
+    // Tooltip background rectangle
+    const tooltipRect = tooltipGroup
+      .append("rect")
+      .attr("fill", "rgba(0,0,0,0.8)")
+      .attr("rx", 5)
+      .attr("ry", 5);
+
+    // Tooltip text
+    const tooltipText = tooltipGroup
+      .append("text")
+      .attr("fill", "white")
+      .attr("font-size", "12px")
+      .attr("font-family", "sans-serif")
+      .attr("dy", "1em")
+      .attr("x", 10)
+      .attr("y", 10);
+
     const tooltip = d3.select(tooltipRef.current);
 
     // Create scales
@@ -271,27 +295,57 @@ const InteractiveBubblePlot = ({ selections }) => {
       .attr("stroke", "white")
       .attr("opacity", 0.8)
       .on("mouseover", (event, d) => {
-        tooltip
-          .style("visibility", "visible")
-          .html(
-            `
-           <strong>Interaction:</strong> ${d.Interaction}<br>
-           <strong>Interacting Pair:</strong> ${d.Interacting_Pair}<br>
-           <strong>Probability:</strong> ${d[
-             selectedProbability?.value
-           ].toExponential(3)}<br>
-           <strong>P-value:</strong> ${d[selectedPValue?.value]}
-         `
-          )
-          .style("top", `${event.pageY - 10}px`)
-          .style("left", `${event.pageX + 10}px`);
+        tooltipGroup.style("visibility", "visible");
+
+        tooltipText.html(null); // Clear old text
+
+        tooltipText
+          .append("tspan")
+          .attr("x", 10)
+          .attr("dy", "1em")
+          .text(`Interaction: ${d.Interaction}`);
+
+        tooltipText
+          .append("tspan")
+          .attr("x", 10)
+          .attr("dy", "1.2em")
+          .text(`Pair: ${d.Interacting_Pair}`);
+
+        tooltipText
+          .append("tspan")
+          .attr("x", 10)
+          .attr("dy", "1.2em")
+          .text(
+            `Probability: ${d[selectedProbability?.value]?.toExponential(2)}`
+          );
+
+        tooltipText
+          .append("tspan")
+          .attr("x", 10)
+          .attr("dy", "1.2em")
+          .text(`P-value: ${d[selectedPValue?.value]}`);
+
+        const bbox = tooltipText.node().getBBox();
+        const padding = 10;
+
+        tooltipRect
+          .attr("width", bbox.width + padding * 2)
+          .attr("height", bbox.height + padding * 2)
+          .attr("x", bbox.x - padding)
+          .attr("y", bbox.y - padding);
+
+        // 🧡 Here's the important part:
+        const cx = xScale(d.Interacting_Pair) + xScale.bandwidth() / 2;
+        const cy = yScale(d.Interaction) + yScale.bandwidth() / 2;
+
+        tooltipGroup.attr("transform", `translate(${cx + 15}, ${cy - 15})`);
       })
-      .on("mousemove", (event) => {
-        tooltip
-          .style("top", `${event.pageY - 10}px`)
-          .style("left", `${event.pageX + 10}px`);
+      .on("mousemove", (event, d) => {
+        // You can even REMOVE this handler now or just keep it empty
       })
-      .on("mouseout", () => tooltip.style("visibility", "hidden"));
+      .on("mouseout", () => {
+        tooltipGroup.style("visibility", "hidden");
+      });
   }, [plotData, selectedPValue, selectedProbability, colorScheme]);
 
   // Function to trigger plot rendering
@@ -658,19 +712,8 @@ const InteractiveBubblePlot = ({ selections }) => {
       </div>
 
       {/* D3 Visualization */}
-      <div style={{ flex: 1, padding: "1rem" }}>
+      <div style={{ flex: 1, padding: "1rem", position: "relative" }}>
         <svg ref={svgRef} width={svgWidth} height={svgHeight}></svg>
-        <div
-          ref={tooltipRef}
-          style={{
-            position: "absolute",
-            backgroundColor: "black",
-            color: "white",
-            padding: "5px",
-            borderRadius: "5px",
-            visibility: "hidden",
-          }}
-        ></div>
       </div>
     </div>
   );

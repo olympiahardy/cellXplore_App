@@ -20,6 +20,7 @@ from vitessce import (
 # app = Flask(__name__, static_folder="./dist", static_url_path="/dist")
 app = Flask(__name__)
 CORS(app, origins=["http://localhost:5174"])
+# CORS(app, origins=["*"])
 
 zarr_cache = None
 
