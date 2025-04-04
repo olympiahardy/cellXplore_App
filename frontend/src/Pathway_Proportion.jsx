@@ -14,7 +14,7 @@ function StackedProportionBarplot() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch("http://127.0.0.1:5000/prop-freq");
+        const response = await fetch("http://oh-cxg-dev.mvls.gla.ac.uk/prop-freq");
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }

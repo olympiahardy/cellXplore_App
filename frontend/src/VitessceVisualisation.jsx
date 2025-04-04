@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Vitessce } from "vitessce";
-import isEqual from "lodash.isequal";
+import { Vitessce } from "@vitessce/dev";
 
 const VitessceVisualization = ({ onSelectionChange }) => {
   const [config, setConfig] = useState(null);
@@ -12,7 +11,7 @@ const VitessceVisualization = ({ onSelectionChange }) => {
 
   const fetchConfig = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:5000/get_config");
+      const response = await fetch("http://oh-cxg-dev.mvls.gla.ac.uk/get_config");
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
@@ -54,7 +53,7 @@ const VitessceVisualization = ({ onSelectionChange }) => {
   // Function to send all selections to Flask
   const sendSelectionsToBackend = async (selections) => {
     try {
-      const response = await fetch("http://127.0.0.1:5000/process_selections", {
+      const response = await fetch("http://oh-cxg-dev.mvls.gla.ac.uk/process_selections", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -98,17 +97,6 @@ const VitessceVisualization = ({ onSelectionChange }) => {
         overflow: "hidden",
       }}
     >
-      <div
-        style={{
-          padding: "1rem",
-          backgroundColor: "#333",
-          textAlign: "center",
-          fontWeight: "bold",
-        }}
-      >
-        Viewing Sample: <span style={{ color: "#FFD700" }}>Breast Cancer</span>
-      </div>
-
       <div style={{ flex: 1, display: "flex", backgroundColor: "#242424" }}>
         <Vitessce
           config={config}

@@ -35,7 +35,7 @@ function InteractionDataTable({ selections }) {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await fetch("http://127.0.0.1:5000/data-table");
+      const response = await fetch("http://oh-cxg-dev.mvls.gla.ac.uk/data-table");
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
@@ -59,7 +59,7 @@ function InteractionDataTable({ selections }) {
 
     setLoading(true);
     try {
-      const response = await fetch("http://127.0.0.1:5000/filter-table", {
+      const response = await fetch("http://oh-cxg-dev.mvls.gla.ac.uk/filter-table", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

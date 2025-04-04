@@ -1,7 +1,7 @@
 {
-    "version": "1.0.16",
+    "version": "1.0.17",
     "name": "Breast Cancer Multi-Modal",
-    "description": "",
+    "description": "High resolution mapping of the tumor microenvironment using integrated single-cell, spatial and in situ analysis. Janesick, A., Shelansky, R., Gottscho, A.D. et al. Nat Commun 14, 8353 (2023). https://doi.org/10.1038/s41467-023-43458-x",
     "datasets": [
         {
             "uid": "A",
@@ -9,7 +9,7 @@
             "files": [
                 {
                     "fileType": "anndata.zarr",
-                    "url": "http://127.0.0.1:5000/datasets/sc_FPPE_breast_cancer.zarr",
+                    "url": "http://oh-cxg-dev.mvls.gla.ac.uk/datasets/sc_FPPE_breast_cancer.zarr",
                     "options": {
                         "obsEmbedding": [
                             {
@@ -48,34 +48,31 @@
             "files": [
                 {
                     "fileType": "spatialdata.zarr",
-                    "url": "http://127.0.0.1:5000/datasets/Breast_Cancer_Xenium_processed.zarr",
+                    "url": "http://oh-cxg-dev.mvls.gla.ac.uk/datasets/Xenium_proper_data.zarr",
                     "options": {
                         "obsFeatureMatrix": {
-                            "path": "tables/table/X/data"
+                            "path": "tables/table/X"
                         },
                         "obsSets": {
                             "obsSets": [
                                 {
-                                    "name": "Clusters",
-                                    "path": "tables/table/obs/Clusters"
+                                    "name": "Cell Type",
+                                    "path": "tables/table/obs/clusters"
                                 }
                             ],
                             "tablePath": "tables/table"
                         },
                         "obsSpots": {
-                            "path": "shapes/cell_boundaries",
+                            "path": "shapes/cell_circles",
                             "tablePath": "tables/table"
                         },
                         "image": {
                             "path": "images/morphology_focus"
-                        },
-                        "labels": {
-                            "path": "labels/cell_labels",
-                            "tablePath": "tables/table"
                         }
                     },
                     "coordinationValues": {
-                        "obsType": "cell"
+                        "obsType": "spot",
+                        "obsSetSelection": "obsSetSelectionScope"
                     }
                 }
             ]
@@ -86,18 +83,101 @@
             "A": "A",
             "B": "B"
         },
+        "imageLayer": {
+            "init_B_image_0": "__dummy__"
+        },
+        "photometricInterpretation": {
+            "init_B_image_0": "RGB"
+        },
+        "metaCoordinationScopes": {
+            "init_B_image_0": {
+                "imageLayer": [
+                    "init_B_image_0"
+                ]
+            }
+        },
+        "metaCoordinationScopesBy": {
+            "init_B_image_0": {
+                "imageLayer": {
+                    "photometricInterpretation": {
+                        "init_B_image_0": "init_B_image_0"
+                    }
+                }
+            }
+        },
         "embeddingType": {
             "A": "UMAP"
         },
         "obsType": {
             "A": "cell",
-            "B": "cell"
+            "B": "spot"
         },
         "obsSetSelection": {
-            "A": []
+            "A": [],
+            "B": []
         }
     },
     "layout": [
+        {
+            "component": "spatialBeta",
+            "coordinationScopes": {
+                "dataset": "B",
+                "metaCoordinationScopes": [
+                    "init_B_image_0"
+                ],
+                "metaCoordinationScopesBy": [
+                    "init_B_image_0"
+                ],
+                "obsType": "B",
+                "obsSetSelection": "B"
+            },
+            "x": 0.0,
+            "y": 6.0,
+            "w": 6.0,
+            "h": 6.0
+        },
+        {
+            "component": "layerControllerBeta",
+            "coordinationScopes": {
+                "dataset": "B",
+                "metaCoordinationScopes": [
+                    "init_B_image_0"
+                ],
+                "metaCoordinationScopesBy": [
+                    "init_B_image_0"
+                ],
+                "obsType": "B",
+                "obsSetSelection": "B"
+            },
+            "x": 6.0,
+            "y": 6.0,
+            "w": 3.0,
+            "h": 3.0
+        },
+        {
+            "component": "featureList",
+            "coordinationScopes": {
+                "dataset": "B",
+                "obsType": "B",
+                "obsSetSelection": "B"
+            },
+            "x": 9.0,
+            "y": 6.0,
+            "w": 3.0,
+            "h": 3.0
+        },
+        {
+            "component": "obsSets",
+            "coordinationScopes": {
+                "dataset": "B",
+                "obsType": "B",
+                "obsSetSelection": "B"
+            },
+            "x": 6.0,
+            "y": 3.0,
+            "w": 3.0,
+            "h": 3.0
+        },
         {
             "component": "scatterplot",
             "coordinationScopes": {
@@ -120,8 +200,8 @@
             },
             "x": 6.0,
             "y": 0.0,
-            "w": 6.0,
-            "h": 3.0
+            "w": 3.0,
+            "h": 4.0
         },
         {
             "component": "featureList",
@@ -130,32 +210,20 @@
                 "obsType": "A",
                 "obsSetSelection": "A"
             },
-            "x": 6.0,
-            "y": 3.0,
-            "w": 6.0,
+            "x": 9.0,
+            "y": 0.0,
+            "w": 3.0,
+            "h": 4.0
+        },
+        {
+            "component": "description",
+            "coordinationScopes": {
+                "dataset": "B"
+            },
+            "x": 9.0,
+            "y": 6.0,
+            "w": 3.0,
             "h": 3.0
-        },
-        {
-            "component": "spatial",
-            "coordinationScopes": {
-                "dataset": "B",
-                "obsType": "B"
-            },
-            "x": 0.0,
-            "y": 6.0,
-            "w": 6.0,
-            "h": 6.0
-        },
-        {
-            "component": "obsSets",
-            "coordinationScopes": {
-                "dataset": "B",
-                "obsType": "B"
-            },
-            "x": 6.0,
-            "y": 6.0,
-            "w": 6.0,
-            "h": 6.0
         }
     ],
     "initStrategy": "auto"

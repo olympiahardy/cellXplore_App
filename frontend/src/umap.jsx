@@ -11,7 +11,7 @@ const EmbeddingsVisualizer = () => {
     // Fetch the embeddings data from the Flask backend
     const fetchData = async () => {
       try {
-        const response = await fetch('http://127.0.0.1:5000/get_embeddings');
+        const response = await fetch('http://oh-cxg-dev.mvls.gla.ac.uk/get_embeddings');
         if (!response.ok) {
           throw new Error(`Error: ${response.statusText}`);
         }
