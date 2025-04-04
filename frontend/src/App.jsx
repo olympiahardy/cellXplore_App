@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Tab, Tabs, TabList, TabPanel } from "react-tabs";
 import "react-tabs/style/react-tabs.css";
 import VitessceVisualization from "./VitessceVisualisation.jsx";
+import DualScatterLR from "./Ligand_Receptor_Search.jsx";
 import InteractionDataTable from "./Table.jsx";
 import FrequencyHeatmap from "./Frequency_Heatmap.jsx";
 import InteractiveBubblePlot from "./Bubble_Plot.jsx";
@@ -64,6 +65,7 @@ const App = () => {
         >
           <TabList>
             <Tab>Single Cell View</Tab>
+            <Tab>Ligand-Receptor Search</Tab>
             <Tab>Interactions Table</Tab>
             <Tab>Pathway Proportions</Tab>
             <Tab>Bubble Plot</Tab>
@@ -84,6 +86,17 @@ const App = () => {
                 style={{ flex: 1, width: "100%" }}
                 onSelectionChange={setSelections}
               />
+            </div>
+          </TabPanel>
+          <TabPanel>
+            <div
+              style={{
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              <DualScatterLR style={{ flex: 1, width: "100%" }} />
             </div>
           </TabPanel>
           <TabPanel>
