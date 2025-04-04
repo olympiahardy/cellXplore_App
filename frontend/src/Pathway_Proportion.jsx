@@ -14,7 +14,7 @@ function StackedProportionBarplot() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch("http://oh-cxg-dev.mvls.gla.ac.uk/prop-freq");
+        const response = await fetch("http://127.0.0.1:5000/prop-freq");
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
@@ -85,7 +85,9 @@ function StackedProportionBarplot() {
   }));
 
   return (
-    <div style={{ padding: "1rem", backgroundColor: "#1e1e1e", color: "white" }}>
+    <div
+      style={{ padding: "1rem", backgroundColor: "#1e1e1e", color: "white" }}
+    >
       <h2 style={{ textAlign: "center" }}>Stacked Proportion Barplot</h2>
 
       {loading ? (
@@ -103,9 +105,7 @@ function StackedProportionBarplot() {
             <Select
               id="pathway-column-select"
               options={columnOptions}
-              onChange={(selected) =>
-                setPathwayColumn(selected?.value || null)
-              }
+              onChange={(selected) => setPathwayColumn(selected?.value || null)}
               placeholder="Choose the pathway column..."
               styles={{
                 control: (provided) => ({

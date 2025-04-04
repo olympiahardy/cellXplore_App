@@ -30,7 +30,7 @@ const App = () => {
         {/* Logo and Title */}
         <div style={{ display: "flex", alignItems: "center" }}>
           <img
-            src="http://oh-cxg-dev.mvls.gla.ac.uk/frontend/cellXplore.png"
+            src="http://127.0.0.1:5000/frontend/cellXplore.png"
             alt="cellXplore Logo"
             style={{ width: "80px", height: "80px", marginRight: "10px" }}
           />
