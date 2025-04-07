@@ -5,38 +5,63 @@
     "datasets": [
         {
             "uid": "A",
-            "name": "Single-Cell RNA",
+            "name": "Xenium Spatial",
             "files": [
                 {
-                    "fileType": "anndata.zarr",
-                    "url": "http://127.0.0.1:5000/datasets/sc_FPPE_breast_cancer.zarr",
+                    "fileType": "spatialdata.zarr",
+                    "url": "http://127.0.0.1:5000/datasets/Xenium_proper_data.zarr",
                     "options": {
-                        "obsEmbedding": [
-                            {
-                                "path": "obsm/X_umap",
-                                "dims": [
-                                    0,
-                                    1
-                                ],
-                                "embeddingType": "UMAP"
-                            }
-                        ],
-                        "obsSets": [
-                            {
-                                "name": "Clusters",
-                                "path": "obs/clusters"
-                            },
-                            {
-                                "name": "Cell Type",
-                                "path": "obs/Cell_Type"
-                            }
-                        ],
                         "obsFeatureMatrix": {
-                            "path": "X"
+                            "path": "tables/table/X"
+                        },
+                        "obsSets": {
+                            "obsSets": [
+                                {
+                                    "name": "Cell Type",
+                                    "path": "tables/table/obs/clusters"
+                                }
+                            ],
+                            "tablePath": "tables/table"
+                        },
+                        "obsSpots": {
+                            "path": "shapes/cell_circles",
+                            "tablePath": "tables/table"
                         }
                     },
                     "coordinationValues": {
-                        "obsType": "cell",
+                        "obsType": "spot",
+                        "obsSetSelection": "obsSetSelectionScope"
+                    }
+                }
+            ]
+        },
+        {
+            "uid": "B",
+            "name": "Xenium Spatial",
+            "files": [
+                {
+                    "fileType": "spatialdata.zarr",
+                    "url": "http://127.0.0.1:5000/datasets/Xenium_proper_data.zarr",
+                    "options": {
+                        "obsFeatureMatrix": {
+                            "path": "tables/table/X"
+                        },
+                        "obsSets": {
+                            "obsSets": [
+                                {
+                                    "name": "Cell Type",
+                                    "path": "tables/table/obs/clusters"
+                                }
+                            ],
+                            "tablePath": "tables/table"
+                        },
+                        "obsSpots": {
+                            "path": "shapes/cell_circles",
+                            "tablePath": "tables/table"
+                        }
+                    },
+                    "coordinationValues": {
+                        "obsType": "spot",
                         "obsSetSelection": "obsSetSelectionScope"
                     }
                 }
@@ -45,40 +70,58 @@
     ],
     "coordinationSpace": {
         "dataset": {
-            "A": "A"
-        },
-        "embeddingType": {
-            "A": "UMAP"
+            "A": "A",
+            "B": "B"
         },
         "obsType": {
-            "A": "cell"
+            "A": "spot",
+            "B": "spot"
         },
         "obsSetSelection": {
-            "A": []
+            "A": [],
+            "B": []
+        },
+        "featureSelection": {
+            "A": null,
+            "B": null
         }
     },
     "layout": [
         {
-            "component": "dualScatterplot",
+            "component": "spatialBeta",
             "coordinationScopes": {
                 "dataset": "A",
-                "embeddingType": "A",
                 "obsType": "A",
-                "obsSetSelection": "A"
+                "obsSetSelection": "A",
+                "featureSelection": "A"
             },
             "x": 0.0,
             "y": 0.0,
-            "w": 6.0,
+            "w": 9.0,
             "h": 6.0
         },
         {
-            "component": "obsSets",
+            "component": "spatialBeta",
+            "coordinationScopes": {
+                "dataset": "B",
+                "obsType": "B",
+                "obsSetSelection": "B",
+                "featureSelection": "B"
+            },
+            "x": 0.0,
+            "y": 6.0,
+            "w": 9.0,
+            "h": 6.0
+        },
+        {
+            "component": "featureList",
             "coordinationScopes": {
                 "dataset": "A",
                 "obsType": "A",
-                "obsSetSelection": "A"
+                "obsSetSelection": "A",
+                "featureSelection": "A"
             },
-            "x": 6.0,
+            "x": 9.0,
             "y": 0.0,
             "w": 3.0,
             "h": 4.0
@@ -86,14 +129,41 @@
         {
             "component": "featureList",
             "coordinationScopes": {
-                "dataset": "A",
-                "obsType": "A",
-                "obsSetSelection": "A"
+                "dataset": "B",
+                "obsType": "B",
+                "obsSetSelection": "B",
+                "featureSelection": "B"
             },
             "x": 9.0,
-            "y": 0.0,
+            "y": 10.0,
             "w": 3.0,
             "h": 4.0
+        },
+        {
+            "component": "layerControllerBeta",
+            "coordinationScopes": {
+                "dataset": "A",
+                "obsType": "A",
+                "obsSetSelection": "A",
+                "featureSelection": "A"
+            },
+            "x": 9.0,
+            "y": 4.0,
+            "w": 3.0,
+            "h": 2.0
+        },
+        {
+            "component": "layerControllerBeta",
+            "coordinationScopes": {
+                "dataset": "B",
+                "obsType": "B",
+                "obsSetSelection": "B",
+                "featureSelection": "B"
+            },
+            "x": 9.0,
+            "y": 10.0,
+            "w": 3.0,
+            "h": 2.0
         }
     ],
     "initStrategy": "auto"

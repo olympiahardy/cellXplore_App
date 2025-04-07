@@ -193,7 +193,7 @@ def get_config():
         return jsonify({"error": str(e)}), 500
 
 
-def generate_dual_scatter_config(merged_zarr_file, output_dir, base_dir):
+def generate_dual_scatter_config(xenium_zarr_file, output_dir, base_dir):
     try:
         os.makedirs(output_dir, exist_ok=True)
 
@@ -204,71 +204,93 @@ def generate_dual_scatter_config(merged_zarr_file, output_dir, base_dir):
             base_dir=base_dir,
         )
 
-        # Single-Cell Dataset (scRNA-seq)
-        sc_dataset = vc.add_dataset(name="Single-Cell RNA").add_object(
-            AnnDataWrapper(
-                adata_path=merged_zarr_file,
-                obs_feature_matrix_path="X",
-                obs_embedding_paths=["obsm/X_umap"],
-                obs_embedding_names=["UMAP"],
-                obs_set_paths=["obs/clusters", "obs/Cell_Type"],
-                obs_set_names=["Clusters", "Cell Type"],
+        # Xenium Spatial Dataset
+        xenium_dataset_1 = vc.add_dataset(name="Xenium Spatial").add_object(
+            SpatialDataWrapper(
+                sdata_path=xenium_zarr_file,  # Path to Xenium dataset
+                # image_path="images/morphology_focus",  # Adjust this based on your Zarr file structure
+                obs_feature_matrix_path="tables/table/X",  # Adjust this based on Xenium data
+                obs_set_paths=["tables/table/obs/clusters"],  # Cluster annotations
+                obs_set_names=["Cell Type"],
+                obs_spots_path="shapes/cell_circles",
                 coordination_values={
-                    "obsType": "cell",
+                    "obsType": "spot",
                     "obsSetSelection": "obsSetSelectionScope",
                 },
             )
         )
 
-        (feat_sel_left,) = vc.add_coordination_by_dict({"featureSelection": ["GeneA"]})
-        (feat_sel_right,) = vc.add_coordination_by_dict({"featureSelection": ["GeneB"]})
+        # Xenium Spatial Dataset
+        xenium_dataset_2 = vc.add_dataset(name="Xenium Spatial").add_object(
+            SpatialDataWrapper(
+                sdata_path=xenium_zarr_file,  # Path to Xenium dataset
+                # image_path="images/morphology_focus",  # Adjust this based on your Zarr file structure
+                obs_feature_matrix_path="tables/table/X",  # Adjust this based on Xenium data
+                obs_set_paths=["tables/table/obs/clusters"],  # Cluster annotations
+                obs_set_names=["Cell Type"],
+                obs_spots_path="shapes/cell_circles",
+                coordination_values={
+                    "obsType": "spot",
+                    "obsSetSelection": "obsSetSelectionScope",
+                },
+            )
+        )
 
-        # Views for Single-Cell Data
-        scatterplot = vc.add_view(
-            "dualScatterplot",
-            dataset=sc_dataset,
-            mapping="UMAP",
+        spatial_view_1 = vc.add_view(
+            "spatialBeta",
+            dataset=xenium_dataset_1,
             x=0.0,
             y=0.0,
-            w=6.0,
-            h=8.0,
-        ).use_coordination(
-            {
-                "featureSelection1Scope": feat_sel_left,
-                "featureSelection2Scope": feat_sel_right,
-            }
+            w=9.0,
+            h=6.0,
         )
-        cell_sets = vc.add_view(
-            cm.OBS_SETS, dataset=sc_dataset, x=6.0, y=0.0, w=3.0, h=4.0
+
+        spatial_view_2 = vc.add_view(
+            "spatialBeta", dataset=xenium_dataset_2, x=0.0, y=6.0, w=9.0, h=6.0
         )
-        # Feature list controlling left scatterplot
+
         feature_list_left = vc.add_view(
-            cm.FEATURE_LIST,
-            dataset=sc_dataset,
-            coordination_values={"featureSelection": feat_sel_left},
+            "featureList",
+            dataset=xenium_dataset_1,
             x=9.0,
             y=0.0,
             w=3.0,
             h=4.0,
         )
 
-        # Feature list controlling right scatterplot
         feature_list_right = vc.add_view(
-            cm.FEATURE_LIST,
-            dataset=sc_dataset,
-            coordination_values={"featureSelection": feat_sel_right},
+            "featureList",
+            dataset=xenium_dataset_2,
             x=9.0,
-            y=4.0,
+            y=10.0,
             w=3.0,
             h=4.0,
         )
 
-        # Link views appropriately
-        vc.link_views(
-            [scatterplot, cell_sets],
-            ["obsType", "obsSetSelection"],
-            ["cell", []],
+        lc_view_1 = vc.add_view(
+            "layerControllerBeta", dataset=xenium_dataset_1, x=9.0, y=4.0, w=3.0, h=2.0
         )
+        lc_view_2 = vc.add_view(
+            "layerControllerBeta",
+            dataset=xenium_dataset_2,
+            x=9.0,
+            y=10.0,
+            w=3.0,
+            h=2.0,
+        )
+
+        vc.link_views(
+            [spatial_view_1, feature_list_left, lc_view_1],
+            ["obsType", "obsSetSelection", "featureSelection"],
+            ["spot", [], None],
+        )
+
+        vc.link_views(
+            [spatial_view_2, feature_list_right, lc_view_2],
+            ["obsType", "obsSetSelection", "featureSelection"],
+            ["spot", [], None],
+        )
+
         # Save the generated configuration
         config_dict = vc.to_dict(
             base_url="http://127.0.0.1:5000/datasets"
@@ -285,7 +307,7 @@ def generate_dual_scatter_config(merged_zarr_file, output_dir, base_dir):
 
 
 # Generate config with both datasets
-generate_dual_scatter_config(MERGED_ZARR_FILE, CONFIG_DIR, BASE_DIR)
+generate_dual_scatter_config(XENIUM_ZARR_FILE, CONFIG_DIR, BASE_DIR)
 
 
 @app.route("/get_dual_config", methods=["GET"])
