@@ -347,6 +347,7 @@ def get_data_table():
                     df = zarr_cache.uns["liana_res"]
                     print("DataFrame accessed:", df)
                     df = df[df["lr_probs"] > 0]
+                    print(list(df.columns.values))
                     # Convert the DataFrame to JSON format
                     data = df.to_json(orient="records")
                     # print("Data converted to JSON format:", data)

@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import Circos from "circos";
 import Select from "react-select";
 import * as d3 from "d3";
 import "./App.css";
@@ -47,17 +46,25 @@ const CircosPlot = ({ selections }) => {
     return colorSpace.slice(0, n);
   };
 
-  // Function to update color mapping for cell types
   const updateColorMapping = (dataset) => {
-    const uniqueCellTypes = Array.from(
+    const rawCellTypes = Array.from(
       new Set(dataset.flatMap((item) => [item.source, item.target]))
     );
-    const palette = scPalette(uniqueCellTypes.length);
-    const colorMap = uniqueCellTypes.reduce((acc, cellType, index) => {
+    const palette = scPalette(rawCellTypes.length);
+
+    const baseColorMap = rawCellTypes.reduce((acc, cellType, index) => {
       acc[cellType] = palette[index];
       return acc;
     }, {});
-    setColorMapping(colorMap);
+
+    // 👇 Add (source) and (target) variants
+    const extendedColorMap = {};
+    rawCellTypes.forEach((type) => {
+      extendedColorMap[`${type} (source)`] = baseColorMap[type];
+      extendedColorMap[`${type} (target)`] = baseColorMap[type];
+    });
+
+    setColorMapping(extendedColorMap);
   };
 
   // Function to fetch full dataset initially
@@ -74,7 +81,9 @@ const CircosPlot = ({ selections }) => {
         const processedData = json.map((row) => ({
           source: row.source,
           target: row.target,
-          prob: parseFloat(row.prob) || 0.1,
+          prob: parseFloat(row.lr_probs) || 0.1,
+          ligand: row.ligand,
+          receptor: row.receptor,
         }));
         setData(processedData);
         updateColorMapping(processedData);
@@ -107,9 +116,16 @@ const CircosPlot = ({ selections }) => {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
-      const filteredData = await response.json();
-      setData(filteredData);
-      updateColorMapping(filteredData); // ✅ Now correctly defined before use
+      const json = await response.json();
+      const processedFilteredData = json.map((row) => ({
+        source: row.source,
+        target: row.target,
+        prob: parseFloat(row.prob) || 0.1,
+        ligand: row.ligand,
+        receptor: row.receptor,
+      }));
+      setData(processedFilteredData);
+      updateColorMapping(processedFilteredData);
     } catch (error) {
       console.error("Error fetching filtered Circos data:", error);
     } finally {
@@ -125,259 +141,223 @@ const CircosPlot = ({ selections }) => {
     ) {
       containerRef.current.innerHTML = "";
 
-      const width = Math.min(window.innerWidth * 0.8, 800);
-      const height = width;
+      const container = containerRef.current.parentElement;
 
-      const circos = new Circos({
-        container: containerRef.current,
-        width,
-        height,
-      });
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      const innerRadius = Math.min(width, height) / 2 - 400;
+      const outerRadius = Math.min(width, height) / 2 - 350;
+      const svg = d3
+        .select(containerRef.current)
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .append("g")
+        .attr("transform", `translate(${width / 2}, ${height / 2})`);
 
+      // 1. Filter data by selected sources/targets
       const filteredData = data.filter(
         (item) =>
           selectedSources.includes(item.source) &&
           selectedTargets.includes(item.target)
       );
 
-      // Define radii for the tracks
-      const innerHeatmapOuterRadius = width / 3.5 - 40; // Outer edge of the heatmap
-      const outerSegmentOuterRadius = width / 3.7; // Outer edge of the outer segments
+      if (filteredData.length === 0) {
+        console.warn("No matching interactions after filtering!");
+        return;
+      }
 
-      // Generate layout for sources and targets
-      const uniqueCellTypes = Array.from(
-        new Set(filteredData.flatMap((item) => [item.source, item.target]))
-      );
-
-      const totalNodes = uniqueCellTypes.length;
-      const senderLayout = uniqueCellTypes.map((id, index) => ({
-        id: `${id}_sender`,
-        label: "", // No labels within segments
-        color: colorMapping[id],
-        len: 100,
-        start: (index / totalNodes) * Math.PI, // Senders in the first half
-        end: ((index + 1) / totalNodes) * Math.PI,
-      }));
-
-      const targetLayout = uniqueCellTypes.map((id, index) => ({
-        id: `${id}_receiver`,
-        label: "", // No labels within segments
-        color: colorMapping[id],
-        len: 100,
-        start: Math.PI + (index / totalNodes) * Math.PI, // Targets in the second half
-        end: Math.PI + ((index + 1) / totalNodes) * Math.PI,
-      }));
-
-      const layout = [...senderLayout, ...targetLayout];
-
-      // Add layout
-      circos.layout(layout, {
-        innerRadius: width / 3 - 20,
-        outerRadius: outerSegmentOuterRadius,
-        labels: { display: false },
-        ticks: { display: false },
-      });
-
-      // Calculate heatmap data and chords
-      const heatmapData = [];
-      const chords = [];
-
-      // Calculate total interactions per target for proportional chords
-      const totalInteractionsPerTarget = filteredData.reduce((acc, item) => {
-        acc[item.target] = (acc[item.target] || 0) + 1;
-        return acc;
-      }, {});
-
-      uniqueCellTypes.forEach((sender) => {
-        const senderData = filteredData.filter((d) => d.source === sender);
-
-        // Group by target and sort by target cell type
-        const groupedData = senderData.reduce((acc, item) => {
-          acc[item.target] = (acc[item.target] || 0) + 1;
-          return acc;
-        }, {});
-
-        const sortedTargets = Object.keys(groupedData).sort((a, b) =>
-          a.localeCompare(b)
+      // 2. Aggregate into matrix
+      const aggregateInteractions = (data) => {
+        const uniqueCellTypes = Array.from(
+          new Set(
+            data
+              .map((item) => `${item.source} (source)`)
+              .concat(data.map((item) => `${item.target} (target)`))
+          )
         );
 
-        let currentStart = 0;
-        const totalInteractions = senderData.length;
+        const indexMap = new Map(uniqueCellTypes.map((d, i) => [d, i]));
 
-        sortedTargets.forEach((target) => {
-          const count = groupedData[target];
-          const proportion = (count / totalInteractions) * 100;
+        const matrix = Array.from({ length: uniqueCellTypes.length }, () =>
+          new Array(uniqueCellTypes.length).fill(0)
+        );
 
-          heatmapData.push({
-            block_id: `${sender}_sender`,
-            start: currentStart,
-            end: currentStart + proportion,
-            value: count,
-            color: colorMapping[target], // Use target's color
-          });
+        const interactionDetails = {};
 
-          // Calculate proportional thickness for target side
-          const targetProportion =
-            (count / totalInteractionsPerTarget[target]) * 100;
+        data.forEach(({ source, target, prob, ligand, receptor }) => {
+          const sourceName = `${source} (source)`; // <-- move inside here
+          const targetName = `${target} (target)`;
 
-          // Find the target range for chords
-          const targetIndex = uniqueCellTypes.indexOf(target);
-          const targetStart = Math.PI + (targetIndex / totalNodes) * Math.PI; // Target's start position
-          const targetEnd =
-            targetStart + (Math.PI / totalNodes) * (targetProportion / 100);
+          const i = indexMap.get(sourceName);
+          const j = indexMap.get(targetName);
 
-          // Determine the range of probabilities
-          const minProb = d3.min(filteredData, (d) => d.prob) || 0;
-          const maxProb = d3.max(filteredData, (d) => d.prob) || 1;
+          matrix[i][j] += prob;
 
-          // Create a linear scale for opacity
-          const opacityScale = d3
-            .scaleLinear()
-            .domain([minProb, maxProb]) // Input range
-            .range([0.3, 1]); // Output range (low to high opacity)
-
-          // Create chords for each interaction
-          senderData
-            .filter((d) => d.target === target)
-            .forEach((interaction, i) => {
-              const senderSegmentStart =
-                currentStart + (i / count) * proportion;
-              const senderSegmentEnd =
-                currentStart + ((i + 1) / count) * proportion;
-
-              // Use scaled opacity
-              const scaledOpacity = opacityScale(interaction.prob);
-
-              chords.push({
-                source: {
-                  id: `${sender}_sender`,
-                  start: senderSegmentStart,
-                  end: senderSegmentEnd,
-                  radius: innerHeatmapOuterRadius,
-                },
-                target: {
-                  id: `${interaction.target}_receiver`,
-                  start: targetStart + (i / count) * targetProportion,
-                  end: targetStart + ((i + 1) / count) * targetProportion,
-                  radius: outerSegmentOuterRadius,
-                },
-                value: interaction.prob,
-                color: `rgba(${parseInt(
-                  colorMapping[sender].substring(1, 3),
-                  16
-                )}, 
-                              ${parseInt(
-                                colorMapping[sender].substring(3, 5),
-                                16
-                              )}, 
-                              ${parseInt(
-                                colorMapping[sender].substring(5, 7),
-                                16
-                              )}, 
-                              ${scaledOpacity})`, // Opacity reflects probability
-              });
-            });
-
-          currentStart += proportion;
-        });
-      });
-
-      // Add inner heatmap track to sender segments with a gap
-      circos.heatmap("inner-heatmap", heatmapData, {
-        innerRadius: width / 3 - 60, // Add a larger gap for clarity
-        outerRadius: innerHeatmapOuterRadius,
-        color: (d) => d.color,
-      });
-
-      // Add arrow-shaped chords for each heatmap segment
-      circos.chords("chords", chords, {
-        radius: innerHeatmapOuterRadius, // Match heatmap track outer radius
-        color: (d) => d.color,
-        arrow: true, // Enable arrow-shaped chords
-      });
-
-      // Add external labels for both senders and targets with larger font size
-      circos.text(
-        "external-labels",
-        layout.map((d) => ({
-          block_id: d.id,
-          position: 50, // Middle of the block
-          value: d.id.replace(/_sender|_receiver/, ""),
-        })),
-        {
-          innerRadius: width / 3 + 10,
-          outerRadius: width / 3 + 60,
-          style: { "font-size": "16px", color: "black" }, // Increased font size
-          radialOffset: 10,
-        }
-      );
-
-      console.log("Chords Data:", chords);
-
-      // Render the Circos plot
-      circos.render();
-
-      // Use D3 to set unique classes for the chords
-      const svg = d3.select(containerRef.current).select("svg");
-
-      svg.selectAll("path.chord").each((d, i, nodes) => {
-        const path = d3.select(nodes[i]);
-        if (d && d.source && d.target) {
-          path
-            .attr(
-              "class",
-              `chord chord-${d.source.id.replace(
-                "_sender",
-                ""
-              )}-to-${d.target.id.replace("_receiver", "")}`
-            )
-            .datum(d); // Explicitly attach data to the path
-        }
-      });
-
-      svg
-        .selectAll("path.chord")
-        .on("mouseover", function (event, d) {
-          console.log("Mouseover data:", d); // Debugging
-
-          if (!d || !d.source || !d.target) {
-            console.error("Invalid data in mouseover:", d);
-            return;
+          const key = `${i}-${j}`;
+          if (!interactionDetails[key]) {
+            interactionDetails[key] = {
+              count: 0,
+              ligrecPairs: [],
+            };
           }
 
-          const chord = d3.select(this);
+          interactionDetails[key].count += 1;
+          interactionDetails[key].ligrecPairs.push({ ligand, receptor, prob });
+        });
 
-          // Highlight chord
-          chord
-            .attr("stroke", "white") // Match stroke with fill color
-            .attr("stroke-width", 2)
-            .attr("opacity", 1);
+        return { matrix, uniqueCellTypes, interactionDetails };
+      };
 
-          // Ensure d contains valid data
-          // Position and display tooltip
+      const { matrix, uniqueCellTypes, interactionDetails } =
+        aggregateInteractions(filteredData);
+
+      // 3. Build D3 chord layout
+      const chordLayout = d3
+        .chord()
+        .padAngle(0.05)
+        .sortSubgroups(d3.descending)(matrix);
+
+      const arc = d3.arc().innerRadius(innerRadius).outerRadius(outerRadius);
+
+      const ribbon = d3.ribbon().radius(innerRadius);
+
+      // 4. Color scale
+      const color = d3
+        .scaleOrdinal()
+        .domain(uniqueCellTypes)
+        .range(uniqueCellTypes.map((d) => colorMapping[d] || "#ccc"));
+
+      // 5. Draw arcs (outer cell type arcs)
+      svg
+        .append("g")
+        .attr("class", "arcs")
+        .selectAll("path")
+        .data(chordLayout.groups)
+        .join("path")
+        .attr("fill", (d) => color(uniqueCellTypes[d.index]))
+        .attr("stroke", "white")
+        .attr("stroke-width", 1)
+        .attr("d", arc);
+
+      // 6. Add cell type labels
+      svg
+        .append("g")
+        .attr("class", "labels")
+        .selectAll("text")
+        .data(chordLayout.groups)
+        .join("text")
+        .each(function (d) {
+          d.angle = (d.startAngle + d.endAngle) / 2;
+        })
+        .attr("dy", ".35em")
+        .attr("transform", function (d) {
+          return `
+            rotate(${(d.angle * 180) / Math.PI - 90})
+            translate(${outerRadius + 10})
+            ${d.angle > Math.PI ? "rotate(180)" : ""}
+          `;
+        })
+        .attr("text-anchor", function (d) {
+          return d.angle > Math.PI ? "end" : "start";
+        })
+        .text((d) =>
+          uniqueCellTypes[d.index]
+            .replace(" (source)", "")
+            .replace(" (target)", "")
+        )
+        .text((d) =>
+          uniqueCellTypes[d.index]
+            .replace(" (source)", "")
+            .replace(" (target)", "")
+        )
+        .style("fill", "white")
+        .style("font-size", "18px")
+        .style("font-weight", "bold");
+
+      // 7. Draw ribbons (chords)
+      svg
+        .append("g")
+        .attr("class", "ribbons")
+        .selectAll("path")
+        .data(chordLayout)
+        .join("path")
+        .attr("fill", (d) => color(uniqueCellTypes[d.target.index]))
+        .attr("stroke", "white")
+        .attr("stroke-width", 1)
+        .attr("opacity", 0.8)
+        .attr("d", ribbon)
+        .on("mouseover", function (event, d) {
+          const key = `${d.source.index}-${d.target.index}`;
+          const details = interactionDetails[key] || {
+            count: 0,
+            ligrecPairs: [],
+          };
+
+          const ligrecText = details.ligrecPairs
+            .sort((a, b) => b.prob - a.prob) // 🔥 sort descending by prob
+            .slice(0, 10) // 🔥 keep only top 15
+            .map(
+              (pair) =>
+                `${pair.ligand} → ${pair.receptor} (${pair.prob.toFixed(3)})`
+            ) // show prob
+            .join("<br/>");
+
           const tooltip = d3.select(tooltipRef.current);
+
+          // 🧠 Manually calculate centroid
+          const angle =
+            (d.source.startAngle +
+              d.source.endAngle +
+              d.target.startAngle +
+              d.target.endAngle) /
+            4;
+          const r = (innerRadius + outerRadius) / 2; // radius in between inner and outer
+          const cx = r * Math.cos(angle - Math.PI / 2); // -90 degrees rotation
+          const cy = r * Math.sin(angle - Math.PI / 2);
+
+          const { left, top } = containerRef.current.getBoundingClientRect();
+
           tooltip
             .style("opacity", 1)
             .style("display", "block")
-            .style("left", `${event.pageX + 10}px`) // Mouse X position
-            .style("top", `${event.pageY + 10}px`) // Mouse Y position
+            .style("left", `${left + width / 2 + cx}px`) // SVG center + offset
+            .style("top", `${top + height / 2 + cy}px`)
             .html(
-              `<b>Source:</b> ${d.source.id.replace("_sender", "")}<br/>
-                <b>Target:</b> ${d.target.id.replace("_receiver", "")}<br/>
-                <b>Probability:</b> ${d.value.toFixed(2)}`
+              `<b>Source:</b> ${uniqueCellTypes[d.source.index]}<br/>
+               <b>Target:</b> ${uniqueCellTypes[d.target.index]}<br/>
+               <b>Sum Prob:</b> ${matrix[d.source.index][
+                 d.target.index
+               ].toFixed(2)}<br/>
+               <b># Interactions:</b> ${details.count}<br/>
+               <b>Ligand-Receptor Pairs:</b><br/>
+               ${ligrecText}`
             );
+
+          d3.select(this)
+            .raise()
+            .transition()
+            .duration(200)
+            .style("opacity", 1)
+            .attr("stroke", "yellow")
+            .attr("stroke-width", 3);
+
+          d3.selectAll(".ribbons path")
+            .filter((el) => el !== d)
+            .transition()
+            .duration(200)
+            .style("opacity", 0.1);
         })
         .on("mouseout", function () {
-          const chord = d3.select(this);
           const tooltip = d3.select(tooltipRef.current);
-          // Remove highlight
-          chord
-            .attr("stroke", "none")
-            .attr("stroke-width", 0)
-            .attr("opacity", 0.7);
+          tooltip.style("display", "none");
 
-          // Hide tooltip
-          d3.select(tooltipRef.current).style("display", "none");
+          d3.selectAll(".ribbons path")
+            .transition()
+            .duration(200)
+            .style("opacity", 0.8)
+            .attr("stroke", "white")
+            .attr("stroke-width", 1);
         });
     }
   }, [data, colorMapping, selectedSources, selectedTargets]);
@@ -546,22 +526,22 @@ const CircosPlot = ({ selections }) => {
         </div>
 
         {/* Main Plot Area */}
-        <div style={{ flex: 1, padding: "1rem", overflow: "hidden" }}>
+        <div style={{ flex: 1, padding: 0, margin: 0, overflow: "hidden" }}>
           {selectedSources.length === 0 || selectedTargets.length === 0 ? (
             <p style={{ textAlign: "center", color: "#555" }}>
               Please select at least one source and one target
             </p>
           ) : (
             <div
-              ref={containerRef}
               style={{
-                margin: "2rem auto",
-                width: "80%",
-                maxWidth: "800px",
-                height: "auto",
+                position: "relative", // 💥 Important
+                width: "100%",
+                height: "100%",
               }}
             >
+              <div ref={containerRef}></div> {/* ONLY the SVG goes here */}
               <div ref={tooltipRef} className="tooltip"></div>
+              {/* Tooltip floats separately */}
             </div>
           )}
         </div>
