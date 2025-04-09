@@ -4,8 +4,23 @@ import { DataGrid, GridToolbar, GridOverlay } from "@mui/x-data-grid";
 function InteractionDataTable({ selections }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [pageSize, setPageSize] = useState(10);
   const [selectedSelection, setSelectedSelection] = useState("");
+  const [paginationModel, setPaginationModel] = useState({
+    page: 0,
+    pageSize: 25, // Default 25 rows per page
+  });
+  const [searchText, setSearchText] = useState("");
+
+  const columns = [
+    { field: "ligand", headerName: "Ligand", flex: 1 },
+    { field: "receptor", headerName: "Receptor", flex: 1 },
+    { field: "source", headerName: "Source", flex: 1 },
+    { field: "target", headerName: "Target", flex: 1 },
+    { field: "lr_probs", headerName: "L-R Probability", flex: 1 },
+    { field: "cellchat_pvals", headerName: "P-value", flex: 1 },
+    { field: "interaction_name", headerName: "Interaction", flex: 1 },
+    { field: "pathway_name", headerName: "Pathway", flex: 1 },
+  ];
 
   // Function to round floats to 4 significant figures
   const roundToSignificantFigures = (value) => {
@@ -31,18 +46,13 @@ function InteractionDataTable({ selections }) {
     fetchData();
   }, []);
 
-  // Fetch full dataset initially
   const fetchData = async () => {
     setLoading(true);
     try {
       const response = await fetch("http://127.0.0.1:5000/data-table");
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
       const fetchedData = await response.json();
       const dataWithIds = fetchedData.map((row, index) => ({
-        id: index, // Assign a unique id to each row
+        id: index,
         ...row,
       }));
       setData(preprocessData(dataWithIds));
@@ -53,27 +63,18 @@ function InteractionDataTable({ selections }) {
     }
   };
 
-  // Fetch filtered data based on selected selection
   const fetchFilteredData = async () => {
     if (!selectedSelection) return;
-
     setLoading(true);
     try {
       const response = await fetch("http://127.0.0.1:5000/filter-table", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ selection_name: selectedSelection }),
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
       const filteredData = await response.json();
       const dataWithIds = filteredData.map((row, index) => ({
-        id: index, // Assign unique ID
+        id: index,
         ...row,
       }));
       setData(preprocessData(dataWithIds));
@@ -84,147 +85,234 @@ function InteractionDataTable({ selections }) {
     }
   };
 
-  // Generate columns, rounding floats for display
-  const columns = React.useMemo(() => {
-    return data.length > 0
-      ? Object.keys(data[0])
-          .filter((key) => key !== "id") // Exclude the id column
-          .map((key) => ({
-            field: key,
-            headerName: key
-              .replace(/_/g, " ") // Replace underscores with spaces
-              .replace(/\b\w/g, (char) => char.toUpperCase()), // Capitalize each word
-            flex: 1,
-          }))
-      : [];
-  }, [data]);
-
   const CustomNoRowsOverlay = () => (
     <GridOverlay>
-      <div style={{ textAlign: "center", color: "#333", fontSize: "1.2rem" }}>
-        No interactions found!
+      <div style={{ textAlign: "center", fontSize: "1rem", color: "#666" }}>
+        No interactions found
       </div>
     </GridOverlay>
+  );
+
+  const exportToCsv = () => {
+    const csvRows = [];
+
+    // Headers
+    const headers = columns.map((col) => col.headerName);
+    csvRows.push(headers.join(","));
+
+    // Rows
+    data.forEach((row) => {
+      const values = columns.map((col) => JSON.stringify(row[col.field] ?? ""));
+      csvRows.push(values.join(","));
+    });
+
+    const csvContent = csvRows.join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "interaction_data.csv");
+    link.click();
+  };
+
+  const filteredData = data.filter((row) =>
+    Object.values(row).some(
+      (value) =>
+        value &&
+        value.toString().toLowerCase().includes(searchText.toLowerCase())
+    )
   );
 
   return (
     <div
       style={{
+        height: "100%",
+        width: "100%",
+        backgroundColor: "#1e1e1e",
+        fontFamily: "'Inter', 'Roboto', 'Helvetica Neue', sans-serif",
         display: "flex",
         flexDirection: "column",
-        height: "100vh",
-        width: "100vw",
-        backgroundColor: "#1e1e1e",
-        color: "white",
+        gap: "0.5rem",
       }}
     >
-      <div
-        style={{
-          backgroundColor: "#333",
-          color: "white",
-          textAlign: "center",
-          padding: "1rem",
-          fontSize: "1.5rem",
-          fontWeight: "bold",
-        }}
-      >
-        Table of Interactions
-      </div>
-
-      {/* Selection Dropdown & Filter Button */}
+      {/* Top Controls */}
       <div
         style={{
           display: "flex",
-          justifyContent: "center",
           alignItems: "center",
-          padding: "1rem",
-          backgroundColor: "#444",
+          justifyContent: "space-between",
+          padding: "0.5rem",
+          flexWrap: "wrap",
         }}
       >
-        <label style={{ color: "white", marginRight: "10px" }}>
-          Select a Filter:
-        </label>
-        <select
-          value={selectedSelection}
-          onChange={(e) => setSelectedSelection(e.target.value)}
-          style={{ padding: "5px", marginRight: "10px" }}
-        >
-          <option value="">All Data</option>
-          {Object.keys(selections).map((name) => (
-            <option key={name} value={name}>
-              {name}
-            </option>
-          ))}
-        </select>
-        <button onClick={fetchFilteredData} style={{ padding: "5px 10px" }}>
-          Apply Filter
-        </button>
-        <button
-          onClick={fetchData}
-          style={{ padding: "5px 10px", marginLeft: "10px" }}
-        >
-          Reset
-        </button>
-      </div>
-
-      {/* Instructions Section */}
-      <div
-        style={{
-          backgroundColor: "#444",
-          color: "#ddd",
-          textAlign: "center",
-          padding: "0.5rem 1rem",
-          fontSize: "1rem",
-          fontStyle: "italic",
-        }}
-      >
-        Here we can see a nice clear tabular view of our interaction results!
-        Click the three dots on each column of the table to sort, filter and
-        search results quickly. You can also sort columns by clicking on the
-        column headers. Columns can also be hidden if you feel they are
-        irrelevant, and can be restored whenever you need them again. Use the
-        controls at the bottom of the table to navigate between the pages of
-        results.
-      </div>
-
-      <div style={{ flex: 1, padding: "1rem" }}>
-        {loading ? (
-          <p style={{ textAlign: "center", color: "white" }}>Loading data...</p>
-        ) : (
-          <DataGrid
-            rows={data}
-            columns={columns}
-            pageSize={pageSize}
-            onPageSizeChange={(newPageSize) => setPageSize(newPageSize)}
-            rowsPerPageOptions={[5, 10, 20]}
-            pagination
-            checkboxSelection
-            disableSelectionOnClick
-            components={{
-              Toolbar: GridToolbar, // Use the built-in toolbar
-              NoRowsOverlay: CustomNoRowsOverlay, // Custom overlay when no rows are displayed
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          {/* Filter Dropdown */}
+          <select
+            value={selectedSelection}
+            onChange={(e) => setSelectedSelection(e.target.value)}
+            style={{
+              padding: "0.25rem",
+              border: "1px solid #555",
+              borderRadius: "4px",
+              fontSize: "0.9rem",
+              background: "#333",
+              color: "#eee",
             }}
-            sx={{
-              backgroundColor: "#fff",
-              "& .MuiDataGrid-columnHeaders": {
-                backgroundColor: "#f5f5f5",
-                color: "#333",
-                fontSize: "1.2rem", // Increased font size
-                fontWeight: "bold", // Bold column headers
-                borderBottom: "2px solid #ddd",
-              },
-              "& .MuiDataGrid-row:nth-of-type(odd)": {
-                backgroundColor: "#f9f9f9",
-              },
-              "& .MuiDataGrid-row:nth-of-type(even)": {
-                backgroundColor: "#ffffff",
-              },
-              "& .MuiDataGrid-cell": {
-                borderBottom: "1px solid #e0e0e0",
-              },
+          >
+            <option value="">All Data</option>
+            {Object.keys(selections).map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+
+          {/* Filter and Reset Buttons */}
+          <button
+            onClick={fetchFilteredData}
+            style={{
+              padding: "0.25rem 0.5rem",
+              backgroundColor: "#333",
+              border: "1px solid #555",
+              color: "#eee",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+          >
+            Apply
+          </button>
+          <button
+            onClick={fetchData}
+            style={{
+              padding: "0.25rem 0.5rem",
+              backgroundColor: "#333",
+              border: "1px solid #555",
+              color: "#eee",
+              borderRadius: "4px",
+              cursor: "pointer",
+            }}
+          >
+            Reset
+          </button>
+        </div>
+
+        {/* Search + Page Size + Export */}
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          {/* Search Bar */}
+          <input
+            type="text"
+            placeholder="Search..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            style={{
+              padding: "0.25rem 0.5rem",
+              borderRadius: "4px",
+              border: "1px solid #555",
+              backgroundColor: "#333",
+              color: "#eee",
+              fontSize: "0.9rem",
             }}
           />
-        )}
+
+          {/* Page Size Select */}
+          <select
+            value={paginationModel.pageSize}
+            onChange={(e) =>
+              setPaginationModel((prev) => ({
+                ...prev,
+                pageSize: parseInt(e.target.value),
+                page: 0,
+              }))
+            }
+            style={{
+              padding: "0.25rem",
+              border: "1px solid #555",
+              borderRadius: "4px",
+              fontSize: "0.9rem",
+              background: "#333",
+              color: "#eee",
+            }}
+          >
+            {[5, 10, 20, 25, 50].map((size) => (
+              <option key={size} value={size}>
+                Show {size}
+              </option>
+            ))}
+          </select>
+
+          {/* Export CSV */}
+          <button
+            onClick={exportToCsv}
+            style={{
+              padding: "0.25rem 0.5rem",
+              backgroundColor: "#333",
+              color: "#eee",
+              border: "1px solid #555",
+              borderRadius: "4px",
+              fontSize: "0.9rem",
+              cursor: "pointer",
+            }}
+          >
+            Export CSV
+          </button>
+        </div>
+      </div>
+
+      {/* Data Table */}
+      <div style={{ flexGrow: 1, width: "100%" }}>
+        <DataGrid
+          rows={filteredData.slice(
+            paginationModel.page * paginationModel.pageSize,
+            (paginationModel.page + 1) * paginationModel.pageSize
+          )}
+          columns={columns}
+          loading={loading}
+          paginationModel={paginationModel}
+          onPaginationModelChange={setPaginationModel}
+          rowCount={filteredData.length}
+          pagination
+          disableColumnMenu
+          sx={{
+            backgroundColor: "#1e1e1e",
+            color: "#eee",
+            border: "none",
+            fontSize: "0.85rem",
+            "& .MuiDataGrid-columnHeaders": {
+              backgroundColor: "#2a2a2a",
+              borderBottom: "1px solid #555",
+            },
+            "& .MuiDataGrid-columnHeader, & .MuiDataGrid-columnHeaderTitle": {
+              backgroundColor: "#2a2a2a",
+              color: "#eee",
+            },
+            "& .MuiDataGrid-row": {
+              backgroundColor: "#1e1e1e",
+              "&:nth-of-type(even)": {
+                backgroundColor: "#222",
+              },
+            },
+            "& .MuiDataGrid-cell": {
+              color: "#eee",
+              borderBottom: "1px solid #333",
+            },
+            "& .MuiDataGrid-footerContainer": {
+              backgroundColor: "#1e1e1e",
+              color: "#eee",
+            },
+            "& .MuiTablePagination-root": {
+              color: "#eee",
+              backgroundColor: "#1e1e1e",
+            },
+            "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows, & .MuiTablePagination-actions":
+              {
+                color: "#eee",
+              },
+            "& .MuiSelect-icon": {
+              color: "#eee",
+            },
+          }}
+        />
       </div>
     </div>
   );

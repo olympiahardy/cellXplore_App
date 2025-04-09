@@ -56,6 +56,10 @@
                         "obsSets": {
                             "obsSets": [
                                 {
+                                    "name": "Clusters",
+                                    "path": "tables/table/obs/leiden"
+                                },
+                                {
                                     "name": "Cell Type",
                                     "path": "tables/table/obs/clusters"
                                 }

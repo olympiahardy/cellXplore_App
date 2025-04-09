@@ -83,8 +83,11 @@ def generate_config(
                 sdata_path=xenium_zarr_file,  # Path to Xenium dataset
                 image_path="images/morphology_focus",  # Adjust this based on your Zarr file structure
                 obs_feature_matrix_path="tables/table/X",  # Adjust this based on Xenium data
-                obs_set_paths=["tables/table/obs/clusters"],  # Cluster annotations
-                obs_set_names=["Cell Type"],
+                obs_set_paths=[
+                    "tables/table/obs/leiden",
+                    "tables/table/obs/clusters",
+                ],  # Cluster annotations
+                obs_set_names=["Clusters", "Cell Type"],
                 obs_spots_path="shapes/cell_circles",
                 coordination_values={
                     "obsType": "spot",
@@ -343,8 +346,8 @@ def get_data_table():
         if zarr_cache is not None:
             try:
                 # Access the DataFrame in the `.uns` slot
-                if "liana_res" in zarr_cache.uns:
-                    df = zarr_cache.uns["liana_res"]
+                if "liana_annotated" in zarr_cache.uns:
+                    df = zarr_cache.uns["liana_annotated"]
                     print("DataFrame accessed:", df)
                     df = df[df["lr_probs"] > 0]
                     print(list(df.columns.values))
@@ -381,10 +384,10 @@ def get_table_prop():
         if zarr_cache is not None:
             try:
                 # Access the DataFrame in the `.uns` slot
-                if "liana_res" in zarr_cache.uns:
-                    df = zarr_cache.uns["liana_res"]
+                if "liana_annotated" in zarr_cache.uns:
+                    df = zarr_cache.uns["liana_annotated"]
                     # print("DataFrame accessed:", df)
-
+                    df = df[df["pathway_name"] != "Unknown"]
                     # Convert the DataFrame to JSON format
                     data = df.to_json(orient="records")
                     # print("Data converted to JSON format:", data)
@@ -418,8 +421,8 @@ def get_table_sankey():
         if zarr_cache is not None:
             try:
                 # Access the DataFrame in the `.uns` slot
-                if "liana_res" in zarr_cache.uns:
-                    df = zarr_cache.uns["liana_res"]
+                if "liana_annotated" in zarr_cache.uns:
+                    df = zarr_cache.uns["liana_annotated"]
                     # print("DataFrame accessed:", df)
 
                     # Convert the DataFrame to JSON format
@@ -455,8 +458,8 @@ def get_table_circos():
         if zarr_cache is not None:
             try:
                 # Access the DataFrame in the `.uns` slot
-                if "liana_res" in zarr_cache.uns:
-                    df = zarr_cache.uns["liana_res"]
+                if "liana_annotated" in zarr_cache.uns:
+                    df = zarr_cache.uns["liana_annotated"]
                     # print("DataFrame accessed:", df)
                     df = df[df["lr_probs"] > 0]
                     df = df[df["cellchat_pvals"] <= 0.05]
@@ -491,8 +494,8 @@ def get_table_circos():
 def get_cellchat_data():
     try:
         # Convert the Cellchat_Interactions data from uns to a DataFrame
-        if "liana_res" in zarr_cache.uns:
-            df = zarr_cache.uns["liana_res"]
+        if "liana_annotated" in zarr_cache.uns:
+            df = zarr_cache.uns["liana_annotated"]
             df = df[df["lr_probs"] > 0]
             # df = df[df["cellchat_pvals"] <= 0.05]
             print("Bubble Plot DataFrame accessed:", df)
@@ -522,8 +525,8 @@ def get_cellchat_data():
 def get_cellchat_bubble():
     try:
         # Access the DataFrame in the `.uns` slot
-        if "liana_res" in zarr_cache.uns:
-            df = zarr_cache.uns["liana_res"]
+        if "liana_annotated" in zarr_cache.uns:
+            df = zarr_cache.uns["liana_annotated"]
             df["Interacting_Pair"] = df["source"] + " -> " + df["target"]
             df["Interaction"] = df["ligand_complex"] + " - " + df["receptor_complex"]
             df = df[df["lr_probs"] > 0]
@@ -563,7 +566,7 @@ def filter_table():
         print(f"Selected Barcodes: {selected_barcodes}")
 
         # Check if the Zarr object is loaded
-        if zarr_cache is not None and "liana_res" in zarr_cache.uns:
+        if zarr_cache is not None and "liana_annotated" in zarr_cache.uns:
             metadf = zarr_cache.obs["Cell_Type"]
 
             # Ensure metadf uses row names (barcodes) correctly
@@ -574,7 +577,7 @@ def filter_table():
             celltypes = metadf.dropna().unique()  # Drop NaN values
             print(f"Cell Types Found: {celltypes}")
 
-            df = zarr_cache.uns["liana_res"]
+            df = zarr_cache.uns["liana_annotated"]
             df = df[df["lr_probs"] > 0]
 
             # Ensure source and target columns exist
