@@ -388,6 +388,8 @@ def get_table_prop():
                     df = zarr_cache.uns["liana_annotated"]
                     # print("DataFrame accessed:", df)
                     df = df[df["pathway_name"] != "Unknown"]
+                    df = df[df["lr_probs"] > 0]
+                    df = df[df["cellchat_pvals"] <= 0.05]
                     # Convert the DataFrame to JSON format
                     data = df.to_json(orient="records")
                     # print("Data converted to JSON format:", data)

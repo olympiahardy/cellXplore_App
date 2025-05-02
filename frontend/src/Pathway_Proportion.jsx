@@ -1,14 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Select from "react-select";
-import Plot from "react-plotly.js";
+import * as d3 from "d3";
 
 function StackedProportionBarplot() {
   const [data, setData] = useState([]);
   const [stringColumns, setStringColumns] = useState([]);
   const [selectedColumn, setSelectedColumn] = useState(null);
   const [pathwayColumn, setPathwayColumn] = useState(null);
-  const [plotData, setPlotData] = useState([]);
+  const [topN, setTopN] = useState(10);
   const [loading, setLoading] = useState(true);
+  const d3Container = useRef();
 
   // Fetch data from the backend
   useEffect(() => {
@@ -39,146 +40,337 @@ function StackedProportionBarplot() {
     fetchData();
   }, []);
 
-  // Update plot data when a column or pathway column is selected
+  // D3 render logic
   useEffect(() => {
-    if (selectedColumn && pathwayColumn && data.length > 0) {
-      const groupedData = data.reduce((acc, row) => {
-        const group = row[selectedColumn];
-        const pathway = row[pathwayColumn];
-        if (!acc[group]) acc[group] = {};
-        if (!acc[group][pathway]) acc[group][pathway] = 0;
-        acc[group][pathway]++;
-        return acc;
-      }, {});
+    if (!selectedColumn || !pathwayColumn || data.length === 0) return;
 
-      const groups = Object.keys(groupedData).sort();
-      const pathways = Array.from(
-        new Set(data.map((row) => row[pathwayColumn]))
-      ).sort();
+    const groupedData = data.reduce((acc, row) => {
+      const group = row[selectedColumn];
+      const pathway = row[pathwayColumn];
+      if (!acc[group]) acc[group] = {};
+      if (!acc[group][pathway]) acc[group][pathway] = 0;
+      acc[group][pathway]++;
+      return acc;
+    }, {});
 
-      const proportions = pathways.map((pathway) =>
-        groups.map((group) => {
-          const count = groupedData[group]?.[pathway] || 0;
-          const total = Object.values(groupedData[group] || {}).reduce(
-            (sum, val) => sum + val,
-            0
-          );
-          return total > 0 ? count / total : 0;
-        })
+    const groups = Object.keys(groupedData).sort();
+    // 1. Count total interactions for each pathway
+    const pathwayCounts = {};
+    data.forEach((row) => {
+      const pathway = row[pathwayColumn];
+      pathwayCounts[pathway] = (pathwayCounts[pathway] || 0) + 1;
+    });
+
+    // 2. Get top N pathways by total interaction count
+    const topPathways = Object.entries(pathwayCounts)
+      .sort((a, b) => b[1] - a[1]) // Descending
+      .slice(0, topN)
+      .map(([key]) => key); // Just pathway names
+    // Step 4: Filter groupedData to only include topN pathways
+    const filteredGroupedData = Object.fromEntries(
+      Object.entries(groupedData).map(([group, pathwaysData]) => {
+        const filteredPathwaysData = Object.fromEntries(
+          Object.entries(pathwaysData).filter(([pathway]) =>
+            topPathways.includes(pathway)
+          )
+        );
+        return [group, filteredPathwaysData];
+      })
+    );
+
+    // Step 5: Generate formatted data
+    const formattedData = groups.map((group) => {
+      const total = Object.values(filteredGroupedData[group]).reduce(
+        (a, b) => a + b,
+        0
       );
+      const obj = { group };
+      topPathways.forEach((pathway) => {
+        obj[pathway] =
+          total > 0 ? (groupedData[group][pathway] || 0) / total : 0;
+      });
+      return obj;
+    });
 
-      const traces = pathways.map((pathway, index) => ({
-        x: groups,
-        y: proportions[index],
-        name: pathway,
-        type: "bar",
-        marker: { line: { width: 1, color: "white" } },
-      }));
+    // Step 6: Calculate pathway totals for sorting
+    const pathwayTotals = {};
+    topPathways.forEach((pathway) => {
+      pathwayTotals[pathway] = formattedData.reduce(
+        (sum, groupObj) => sum + groupObj[pathway],
+        0
+      );
+    });
 
-      setPlotData(traces);
-    }
-  }, [selectedColumn, pathwayColumn, data]);
+    // Step 7: Sort pathways by total proportions (ascending)
+    const sortedPathways = [...topPathways].sort(
+      (a, b) => pathwayTotals[b] - pathwayTotals[a]
+    );
+
+    // Clear old chart
+    d3.select(d3Container.current).selectAll("*").remove();
+
+    // Dimensions
+    const margin = { top: 30, right: 30, bottom: 60, left: 60 },
+      width = 800 - margin.left - margin.right,
+      height = 500 - margin.top - margin.bottom;
+
+    const svg = d3
+      .select(d3Container.current)
+      .append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    const x = d3.scaleBand().domain(groups).range([0, width]).padding(0.2);
+
+    const y = d3.scaleLinear().domain([0, 1]).range([height, 0]);
+
+    const color = d3
+      .scaleOrdinal()
+      .domain(sortedPathways)
+      .range(d3.schemeTableau10);
+
+    const stackedSeries = d3.stack().keys(sortedPathways)(formattedData);
+
+    svg
+      .append("g")
+      .selectAll("g")
+      .data(stackedSeries)
+      .join("g")
+      .attr("fill", (d) => color(d.key))
+      .selectAll("rect")
+      .data((d) => d)
+      .join("rect")
+      .attr("x", (d) => x(d.data.group))
+      .attr("y", (d) => y(d[1]))
+      .attr("height", (d) => y(d[0]) - y(d[1]))
+      .attr("width", x.bandwidth())
+      .on("mouseover", function (event, d) {
+        const group = d.data.group;
+        const pathway = d3.select(this.parentNode).datum().key;
+        const percentBarHeight = ((d[1] - d[0]) * 100).toFixed(1);
+
+        // All rows in this group
+        const allGroupRows = data.filter(
+          (row) => row[selectedColumn] === group
+        );
+
+        // All rows in this group AND this pathway
+        const groupPathwayRows = allGroupRows.filter(
+          (row) => row[pathwayColumn] === pathway
+        );
+
+        // Global: all rows for this pathway
+        const globalPathwayRows = data.filter(
+          (row) => row[pathwayColumn] === pathway
+        );
+
+        const percentGroupLocal = (
+          (groupPathwayRows.length / allGroupRows.length) *
+          100
+        ).toFixed(1);
+
+        const percentGlobal = (
+          (globalPathwayRows.length / data.length) *
+          100
+        ).toFixed(1);
+
+        // Build Interacting_Pairs as `${source} → ${target}`
+        const pairCounts = {};
+        groupPathwayRows.forEach((row) => {
+          const pair = `${row.source} → ${row.target}`;
+          pairCounts[pair] = (pairCounts[pair] || 0) + 1;
+        });
+
+        const topPairs = Object.entries(pairCounts)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5)
+          .map(([pair, count]) => `• ${pair} (${count})`)
+          .join("<br>");
+
+        const htmlContent = `
+          <strong>Pathway:</strong> ${pathway}<br>
+          <strong>Group:</strong> ${group}<br>
+          <strong>Plot Percentage:</strong> ${percentBarHeight}% of bar<br>
+          <strong>Group Interactions:</strong> ${groupPathwayRows.length} (${percentGroupLocal}% of group)<br>
+          <strong>Global Interactions:</strong> ${globalPathwayRows.length} (${percentGlobal}% of dataset)<br>
+          <strong>Top 5 Interacting Pairs:</strong><br>
+          ${topPairs}
+        `;
+
+        tooltip
+          .html(htmlContent)
+          .style("left", event.pageX + 10 + "px")
+          .style("top", event.pageY - 40 + "px")
+          .style("opacity", 1);
+      })
+      .on("mousemove", function (event) {
+        tooltip
+          .style("left", event.pageX + 10 + "px")
+          .style("top", event.pageY - 40 + "px");
+      })
+      .on("mouseout", function () {
+        tooltip.style("opacity", 0);
+      });
+
+    svg
+      .append("g")
+      .attr("transform", `translate(0,${height})`)
+      .call(d3.axisBottom(x));
+
+    svg.append("g").call(d3.axisLeft(y).tickFormat(d3.format(".0%")));
+
+    // Add legend
+    const legend = svg
+      .selectAll(".legend")
+      .data(sortedPathways)
+      .enter()
+      .append("g")
+      .attr("transform", (d, i) => `translate(0,${i * 20})`);
+
+    legend
+      .append("rect")
+      .attr("x", width - 20)
+      .attr("width", 18)
+      .attr("height", 18)
+      .style("fill", (d) => color(d));
+
+    legend
+      .append("text")
+      .attr("x", width - 26)
+      .attr("y", 9)
+      .attr("dy", ".35em")
+      .style("text-anchor", "end")
+      .style("fill", "white")
+      .text((d) => d);
+  }, [selectedColumn, pathwayColumn, data, topN]);
 
   const columnOptions = stringColumns.map((col) => ({
     value: col,
     label: col,
   }));
 
+  const tooltip = d3.select("#tooltip");
+
+  const customSelectStyles = {
+    control: (provided) => ({
+      ...provided,
+      backgroundColor: "#333",
+      color: "white",
+      borderColor: "#555",
+    }),
+    menu: (provided) => ({
+      ...provided,
+      backgroundColor: "#333",
+      color: "white",
+    }),
+    option: (provided, state) => ({
+      ...provided,
+      backgroundColor: state.isFocused ? "#555" : "#333",
+      color: "white",
+    }),
+    singleValue: (provided) => ({
+      ...provided,
+      color: "white",
+    }),
+  };
+
   return (
     <div
-      style={{ padding: "1rem", backgroundColor: "#1e1e1e", color: "white" }}
+      style={{
+        display: "flex",
+        height: "100vh",
+        backgroundColor: "#1e1e1e",
+        color: "white",
+      }}
     >
-      <h2 style={{ textAlign: "center" }}>Stacked Proportion Barplot</h2>
+      {/* Sidebar for dropdowns */}
+      <div
+        style={{ width: "25%", padding: "1rem", backgroundColor: "#2e2e2e" }}
+      >
+        <h4
+          style={{ color: "white", textAlign: "center", marginBottom: "15px" }}
+        >
+          Customize Barplot
+        </h4>
 
-      {loading ? (
-        <p>Loading data...</p>
-      ) : (
-        <>
-          {/* Dropdown for selecting interaction pathway column */}
-          <div style={{ marginBottom: "1rem" }}>
-            <label
-              htmlFor="pathway-column-select"
-              style={{ marginRight: "10px" }}
-            >
-              Select the interaction pathway column:
-            </label>
-            <Select
-              id="pathway-column-select"
-              options={columnOptions}
-              onChange={(selected) => setPathwayColumn(selected?.value || null)}
-              placeholder="Choose the pathway column..."
-              styles={{
-                control: (provided) => ({
-                  ...provided,
-                  backgroundColor: "#333",
-                  color: "white",
-                  borderColor: "#555",
-                }),
-                menu: (provided) => ({
-                  ...provided,
-                  backgroundColor: "#333",
-                  color: "white",
-                }),
-                singleValue: (provided) => ({
-                  ...provided,
-                  color: "white",
-                }),
-              }}
-            />
-          </div>
+        {/* Dropdown for pathway column */}
+        <div style={{ marginBottom: "15px" }}>
+          <label
+            style={{ display: "block", marginBottom: "5px", color: "white" }}
+          >
+            Select the interaction pathway column:
+          </label>
+          <Select
+            id="pathway-column-select"
+            options={columnOptions}
+            onChange={(selected) => setPathwayColumn(selected?.value || null)}
+            placeholder="Choose the pathway column..."
+            styles={customSelectStyles}
+          />
+        </div>
 
-          {/* Dropdown for selecting column to group by */}
-          <div style={{ marginBottom: "1rem" }}>
-            <label htmlFor="column-select" style={{ marginRight: "10px" }}>
-              Select the column to group by:
-            </label>
-            <Select
-              id="column-select"
-              options={columnOptions}
-              onChange={(selected) =>
-                setSelectedColumn(selected?.value || null)
-              }
-              placeholder="Choose a column to group by..."
-              styles={{
-                control: (provided) => ({
-                  ...provided,
-                  backgroundColor: "#333",
-                  color: "white",
-                  borderColor: "#555",
-                }),
-                menu: (provided) => ({
-                  ...provided,
-                  backgroundColor: "#333",
-                  color: "white",
-                }),
-                singleValue: (provided) => ({
-                  ...provided,
-                  color: "white",
-                }),
-              }}
-            />
-          </div>
+        {/* Dropdown for grouping column */}
+        <div style={{ marginBottom: "15px" }}>
+          <label
+            style={{ display: "block", marginBottom: "5px", color: "white" }}
+          >
+            Select the column to group by:
+          </label>
+          <Select
+            id="column-select"
+            options={columnOptions}
+            onChange={(selected) => setSelectedColumn(selected?.value || null)}
+            placeholder="Choose a column to group by..."
+            styles={customSelectStyles}
+          />
+        </div>
+        <div style={{ marginBottom: "15px" }}>
+          <label
+            style={{ display: "block", marginBottom: "5px", color: "white" }}
+          >
+            Show Top N Pathways:
+          </label>
+          <Select
+            value={{ value: topN, label: `Top ${topN}` }}
+            options={[5, 10, 15, 20].map((n) => ({
+              value: n,
+              label: `Top ${n}`,
+            }))}
+            onChange={(selected) => setTopN(selected.value)}
+            styles={customSelectStyles}
+          />
+        </div>
+      </div>
 
-          {/* Plot */}
-          {plotData.length > 0 && (
-            <Plot
-              data={plotData}
-              layout={{
-                title: `Proportion of Interaction Pathways by ${selectedColumn}`,
-                barmode: "stack",
-                paper_bgcolor: "#1e1e1e",
-                plot_bgcolor: "#1e1e1e",
-                font: { color: "white" },
-                xaxis: { title: selectedColumn },
-                yaxis: { title: "Proportion", tickformat: ".0%" },
-                legend: { orientation: "h", y: -0.2 },
-              }}
-              useResizeHandler
-              style={{ width: "100%", height: "500px" }}
-            />
-          )}
-        </>
-      )}
+      {/* Main content area for D3 chart */}
+      <div style={{ flex: 1, padding: "1rem", position: "relative" }}>
+        <div
+          ref={d3Container}
+          style={{
+            width: "100%",
+            height: "100%",
+            minHeight: "520px",
+            border: "1px solid #444",
+          }}
+        />
+      </div>
+      <div
+        id="tooltip"
+        style={{
+          position: "absolute",
+          backgroundColor: "#222",
+          color: "white",
+          padding: "8px",
+          borderRadius: "5px",
+          fontSize: "12px",
+          pointerEvents: "none",
+          opacity: 0,
+          maxWidth: "300px",
+          zIndex: 10,
+        }}
+      ></div>
     </div>
   );
 }

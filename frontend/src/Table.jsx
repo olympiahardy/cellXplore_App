@@ -5,11 +5,16 @@ function InteractionDataTable({ selections }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedSelection, setSelectedSelection] = useState("");
+  const [selectedRows, setSelectedRows] = useState([]);
+  const [savedSelections, setSavedSelections] = useState({});
+  const [newSelectionName, setNewSelectionName] = useState("");
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
     pageSize: 25, // Default 25 rows per page
   });
   const [searchText, setSearchText] = useState("");
+  const [renamingSelection, setRenamingSelection] = useState(null);
+  const [renameInput, setRenameInput] = useState("");
 
   const columns = [
     { field: "ligand", headerName: "Ligand", flex: 1 },
@@ -123,6 +128,57 @@ function InteractionDataTable({ selections }) {
         value.toString().toLowerCase().includes(searchText.toLowerCase())
     )
   );
+
+  const handleSaveSelection = () => {
+    const selectedRowsData = data.filter((row) =>
+      selectedRows.includes(row.id)
+    );
+
+    setSavedSelections((prev) => ({
+      ...prev,
+      [newSelectionName]: selectedRowsData,
+    }));
+
+    // Optional: notify parent component if needed
+    if (onSelectionSaved) {
+      onSelectionSaved(newSelectionName, selectedRowsData);
+    }
+
+    setNewSelectionName("");
+  };
+
+  const handleLoadSelection = (name) => {
+    const rows = savedSelections[name];
+    const ids = rows.map((row) => row.id);
+    setSelectedRows(ids);
+  };
+
+  const handleConfirmRename = (oldName) => {
+    if (!renameInput.trim()) return;
+
+    setSavedSelections((prev) => {
+      const newSelections = { ...prev };
+      newSelections[renameInput.trim()] = newSelections[oldName];
+      delete newSelections[oldName];
+      return newSelections;
+    });
+
+    setRenamingSelection(null);
+    setRenameInput("");
+  };
+
+  const handleDeleteSelection = (name) => {
+    setSavedSelections((prev) => {
+      const newSelections = { ...prev };
+      delete newSelections[name];
+      return newSelections;
+    });
+  };
+
+  const handleFilterSelection = (name) => {
+    const selectedData = savedSelections[name] || [];
+    setData(selectedData.map((row, idx) => ({ ...row, id: idx })));
+  };
 
   return (
     <div
@@ -259,6 +315,126 @@ function InteractionDataTable({ selections }) {
         </div>
       </div>
 
+      {/* Save Selection Controls */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "0.5rem",
+          paddingLeft: "0.5rem",
+        }}
+      >
+        <input
+          type="text"
+          value={newSelectionName}
+          onChange={(e) => setNewSelectionName(e.target.value)}
+          placeholder="Save selection as..."
+          style={{
+            padding: "0.25rem",
+            borderRadius: "4px",
+            border: "1px solid #555",
+            backgroundColor: "#333",
+            color: "#eee",
+          }}
+        />
+        <button
+          onClick={handleSaveSelection}
+          disabled={!newSelectionName || selectedRows.length === 0}
+          style={{
+            padding: "0.25rem 0.5rem",
+            backgroundColor: "#333",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            fontSize: "0.9rem",
+            cursor: "pointer",
+          }}
+        >
+          Save Selection
+        </button>
+      </div>
+
+      {/* Saved Selections */}
+      <div style={{ paddingLeft: "0.5rem", color: "#eee" }}>
+        <h4>Saved Selections:</h4>
+        <ul style={{ listStyle: "none", padding: 0 }}>
+          {Object.keys(savedSelections).map((name) => (
+            <li key={name} style={{ marginBottom: "0.5rem" }}>
+              {renamingSelection === name ? (
+                <div style={{ display: "flex", gap: "0.5rem" }}>
+                  <input
+                    value={renameInput}
+                    onChange={(e) => setRenameInput(e.target.value)}
+                    style={{
+                      padding: "0.25rem",
+                      borderRadius: "4px",
+                      background: "#333",
+                      color: "#eee",
+                      border: "1px solid #555",
+                    }}
+                  />
+                  <button onClick={() => handleConfirmRename(name)}>
+                    Save
+                  </button>
+                  <button onClick={() => setRenamingSelection(null)}>
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "0.5rem",
+                    alignItems: "center",
+                  }}
+                >
+                  <button onClick={() => handleLoadSelection(name)}>
+                    {name}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setRenamingSelection(name);
+                      setRenameInput(name);
+                    }}
+                  >
+                    Rename
+                  </button>
+
+                  {/* 🆕 New FILTER Button */}
+                  <button
+                    onClick={() => handleFilterSelection(name)}
+                    style={{
+                      backgroundColor: "#1976d2",
+                      border: "none",
+                      color: "white",
+                      padding: "0.25rem 0.5rem",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      fontSize: "0.8rem",
+                    }}
+                  >
+                    Filter
+                  </button>
+                  <button
+                    onClick={() => handleDeleteSelection(name)}
+                    style={{
+                      backgroundColor: "#333",
+                      border: "none",
+                      color: "white",
+                      padding: "0.25rem 0.5rem",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+
       {/* Data Table */}
       <div style={{ flexGrow: 1, width: "100%" }}>
         <DataGrid
@@ -271,6 +447,11 @@ function InteractionDataTable({ selections }) {
           paginationModel={paginationModel}
           onPaginationModelChange={setPaginationModel}
           rowCount={filteredData.length}
+          checkboxSelection // ✅ Allow user to click checkboxes
+          onRowSelectionModelChange={(newSelection) =>
+            setSelectedRows(newSelection)
+          }
+          rowSelectionModel={selectedRows}
           pagination
           disableColumnMenu
           sx={{
