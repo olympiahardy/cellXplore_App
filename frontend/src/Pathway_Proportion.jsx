@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
 import Select from "react-select";
 import * as d3 from "d3";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 function StackedProportionBarplot() {
   const [data, setData] = useState([]);
@@ -10,6 +12,45 @@ function StackedProportionBarplot() {
   const [topN, setTopN] = useState(10);
   const [loading, setLoading] = useState(true);
   const d3Container = useRef();
+
+  const [showModal, setShowModal] = useState(false);
+  const [pdfWidthCm, setPdfWidthCm] = useState(20); // default: 20 cm
+  const [pdfHeightCm, setPdfHeightCm] = useState(15);
+  const [pdfFilename, setPdfFilename] = useState("stacked_barplot");
+  const [pdfDPI, setPdfDPI] = useState(300);
+
+  const handleDownloadPDF = async () => {
+    const container = d3Container.current;
+
+    if (!container) {
+      console.error("Chart container not found.");
+      return;
+    }
+
+    // Convert cm to pixels at the selected DPI
+    const pxPerCm = pdfDPI / 2.54;
+    const pdfWidthPx = pdfWidthCm * pxPerCm;
+    const pdfHeightPx = pdfHeightCm * pxPerCm;
+
+    const canvas = await html2canvas(container, {
+      backgroundColor: "#1e1e1e",
+      useCORS: true,
+      scale: pdfDPI / 96, // For high-res export
+    });
+
+    const imgData = canvas.toDataURL("image/png");
+
+    const pdf = new jsPDF({
+      orientation: pdfWidthCm > pdfHeightCm ? "landscape" : "portrait",
+      unit: "px",
+      format: [pdfWidthPx, pdfHeightPx],
+    });
+
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidthPx, pdfHeightPx);
+    pdf.save(`${pdfFilename || "stacked_barplot"}.pdf`);
+
+    setShowModal(false);
+  };
 
   // Fetch data from the backend
   useEffect(() => {
@@ -122,7 +163,7 @@ function StackedProportionBarplot() {
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    const x = d3.scaleBand().domain(groups).range([0, width]).padding(0.2);
+    const x = d3.scaleBand().domain(groups).range([0, width]).padding(0.4);
 
     const y = d3.scaleLinear().domain([0, 1]).range([height, 0]);
 
@@ -217,9 +258,15 @@ function StackedProportionBarplot() {
     svg
       .append("g")
       .attr("transform", `translate(0,${height})`)
-      .call(d3.axisBottom(x));
+      .call(d3.axisBottom(x))
+      .selectAll("text")
+      .style("font-size", "14px");
 
-    svg.append("g").call(d3.axisLeft(y).tickFormat(d3.format(".0%")));
+    svg
+      .append("g")
+      .call(d3.axisLeft(y).tickFormat(d3.format(".0%")))
+      .selectAll("text")
+      .style("font-size", "14px");
 
     // Add legend
     const legend = svg
@@ -342,6 +389,22 @@ function StackedProportionBarplot() {
             styles={customSelectStyles}
           />
         </div>
+        <div style={{ marginTop: "20px" }}>
+          <button
+            onClick={() => setShowModal(true)}
+            style={{
+              padding: "10px",
+              backgroundColor: "#007bff",
+              color: "white",
+              border: "none",
+              borderRadius: "5px",
+              cursor: "pointer",
+              width: "100%",
+            }}
+          >
+            Save
+          </button>
+        </div>
       </div>
 
       {/* Main content area for D3 chart */}
@@ -371,6 +434,95 @@ function StackedProportionBarplot() {
           zIndex: 10,
         }}
       ></div>
+      {showModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "rgba(0, 0, 0, 0.6)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 9999,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#2e2e2e",
+              padding: "20px",
+              borderRadius: "8px",
+              color: "white",
+              minWidth: "300px",
+            }}
+          >
+            <h3 style={{ marginBottom: "10px" }}>Export Plot to PDF</h3>
+
+            <label>Filename:</label>
+            <input
+              type="text"
+              value={pdfFilename}
+              onChange={(e) => setPdfFilename(e.target.value)}
+              style={{ width: "100%", marginBottom: "10px" }}
+            />
+
+            <label>Width (cm):</label>
+            <input
+              type="number"
+              value={pdfWidthCm}
+              onChange={(e) => setPdfWidthCm(Number(e.target.value))}
+              style={{ width: "100%", marginBottom: "10px" }}
+            />
+
+            <label>Height (cm):</label>
+            <input
+              type="number"
+              value={pdfHeightCm}
+              onChange={(e) => setPdfHeightCm(Number(e.target.value))}
+              style={{ width: "100%", marginBottom: "10px" }}
+            />
+
+            <label>DPI (dots per inch):</label>
+            <input
+              type="number"
+              value={pdfDPI}
+              onChange={(e) => setPdfDPI(Number(e.target.value))}
+              style={{ width: "100%", marginBottom: "10px" }}
+            />
+
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <button
+                onClick={() => setShowModal(false)}
+                style={{
+                  backgroundColor: "#666",
+                  color: "white",
+                  padding: "5px 10px",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDownloadPDF}
+                style={{
+                  backgroundColor: "#28a745",
+                  color: "white",
+                  padding: "5px 10px",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                }}
+              >
+                Download
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
