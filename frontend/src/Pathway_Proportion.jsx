@@ -52,6 +52,17 @@ function StackedProportionBarplot() {
     setShowModal(false);
   };
 
+  const openExportModal = () => {
+    const svg = svgRef.current;
+    if (svg) {
+      const bbox = svg.getBBox(); // Gets the actual size of SVG content
+      const pxPerCm = pdfDPI / 2.54;
+      setPdfWidthCm((bbox.width || svg.clientWidth) / pxPerCm);
+      setPdfHeightCm((bbox.height || svg.clientHeight) / pxPerCm);
+    }
+    setShowModal(true);
+  };
+
   // Fetch data from the backend
   useEffect(() => {
     const fetchData = async () => {
@@ -494,7 +505,7 @@ function StackedProportionBarplot() {
 
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <button
-                onClick={() => setShowModal(false)}
+                onClick={openExportModal}
                 style={{
                   backgroundColor: "#666",
                   color: "white",

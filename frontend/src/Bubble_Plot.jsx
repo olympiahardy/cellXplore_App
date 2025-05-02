@@ -1,9 +1,12 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import * as d3 from "d3";
 import Select from "react-select";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
 const InteractiveBubblePlot = ({ selections }) => {
   const svgRef = useRef();
+  const containerRef = useRef();
   const tooltipRef = useRef();
 
   const [data, setData] = useState([]);
@@ -52,6 +55,12 @@ const InteractiveBubblePlot = ({ selections }) => {
     { value: "Oranges", label: "Oranges", scale: d3.interpolateOranges },
     { value: "Purples", label: "Purples", scale: d3.interpolatePurples },
   ];
+
+  const [showModal, setShowModal] = useState(false);
+  const [pdfFilename, setPdfFilename] = useState("bubble_plot");
+  const [pdfWidthCm, setPdfWidthCm] = useState(21); // A4 default
+  const [pdfHeightCm, setPdfHeightCm] = useState(29.7);
+  const [pdfDPI, setPdfDPI] = useState(300);
 
   // Function to fetch filtered data when a selection is chosen
   const fetchFilteredData = async () => {
@@ -107,6 +116,48 @@ const InteractiveBubblePlot = ({ selections }) => {
 
     fetchData();
   }, []);
+
+  const handleDownloadPDF = async () => {
+    const container = containerRef.current;
+
+    if (!container) {
+      console.error("Container not found");
+      return;
+    }
+
+    const pxPerCm = pdfDPI / 2.54;
+    const pdfWidthPx = pdfWidthCm * pxPerCm;
+    const pdfHeightPx = pdfHeightCm * pxPerCm;
+
+    const canvas = await html2canvas(container, {
+      backgroundColor: "#1e1e1e",
+      useCORS: true,
+      scale: pdfDPI / 96,
+    });
+
+    const imgData = canvas.toDataURL("image/png");
+
+    const pdf = new jsPDF({
+      orientation: pdfWidthCm > pdfHeightCm ? "landscape" : "portrait",
+      unit: "px",
+      format: [pdfWidthPx, pdfHeightPx],
+    });
+
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidthPx, pdfHeightPx);
+    pdf.save(`${pdfFilename || "bubble_plot"}.pdf`);
+
+    setShowModal(false);
+  };
+  const openExportModal = () => {
+    const svg = svgRef.current;
+    if (svg) {
+      const bbox = svg.getBBox(); // Gets the actual size of SVG content
+      const pxPerCm = pdfDPI / 2.54;
+      setPdfWidthCm((bbox.width || svg.clientWidth) / pxPerCm);
+      setPdfHeightCm((bbox.height || svg.clientHeight) / pxPerCm);
+    }
+    setShowModal(true);
+  };
 
   // Get unique values from the selected source & target columns
   const sourceValues = useMemo(() => {
@@ -709,12 +760,119 @@ const InteractiveBubblePlot = ({ selections }) => {
         >
           Plot
         </button>
+
+        <button
+          onClick={openExportModal}
+          style={{
+            marginTop: "10px",
+            padding: "10px",
+            backgroundColor: "#28a745",
+            color: "white",
+            border: "none",
+            borderRadius: "5px",
+            cursor: "pointer",
+            width: "100%",
+          }}
+        >
+          Save as PDF
+        </button>
       </div>
 
       {/* D3 Visualization */}
       <div style={{ flex: 1, padding: "1rem", position: "relative" }}>
-        <svg ref={svgRef} width={svgWidth} height={svgHeight}></svg>
+        <div ref={containerRef} style={{ backgroundColor: "#1e1e1e" }}>
+          <svg ref={svgRef} width={svgWidth} height={svgHeight}></svg>
+        </div>
       </div>
+      {showModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            backgroundColor: "rgba(0, 0, 0, 0.6)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 9999,
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#2e2e2e",
+              padding: "20px",
+              borderRadius: "8px",
+              color: "white",
+              minWidth: "300px",
+            }}
+          >
+            <h3 style={{ marginBottom: "10px" }}>Export Bubble Plot to PDF</h3>
+
+            <label>Filename:</label>
+            <input
+              type="text"
+              value={pdfFilename}
+              onChange={(e) => setPdfFilename(e.target.value)}
+              style={{ width: "100%", marginBottom: "10px" }}
+            />
+
+            <label>Width (cm):</label>
+            <input
+              type="number"
+              value={pdfWidthCm}
+              onChange={(e) => setPdfWidthCm(Number(e.target.value))}
+              style={{ width: "100%", marginBottom: "10px" }}
+            />
+
+            <label>Height (cm):</label>
+            <input
+              type="number"
+              value={pdfHeightCm}
+              onChange={(e) => setPdfHeightCm(Number(e.target.value))}
+              style={{ width: "100%", marginBottom: "10px" }}
+            />
+
+            <label>DPI (dots per inch):</label>
+            <input
+              type="number"
+              value={pdfDPI}
+              onChange={(e) => setPdfDPI(Number(e.target.value))}
+              style={{ width: "100%", marginBottom: "10px" }}
+            />
+
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <button
+                onClick={() => setShowModal(false)}
+                style={{
+                  backgroundColor: "#666",
+                  color: "white",
+                  padding: "5px 10px",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDownloadPDF}
+                style={{
+                  backgroundColor: "#28a745",
+                  color: "white",
+                  padding: "5px 10px",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                }}
+              >
+                Download
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
