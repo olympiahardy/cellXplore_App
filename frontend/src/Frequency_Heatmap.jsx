@@ -1,6 +1,20 @@
-import React, { useEffect, useState } from "react";
-import Plot from "react-plotly.js";
+import React, { useEffect, useState, useRef } from "react";
 import Select from "react-select";
+import * as d3 from "d3";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import {
+  interpolateViridis,
+  interpolateCividis,
+  interpolateBlues,
+  interpolateGreens,
+  interpolateReds,
+  interpolateOranges,
+  interpolatePurples,
+  interpolateYlGnBu,
+  interpolateYlOrRd,
+  interpolateRdBu,
+} from "d3-scale-chromatic";
 
 const FrequencyHeatmap = ({ selections }) => {
   const [data, setData] = useState([]);
@@ -9,6 +23,22 @@ const FrequencyHeatmap = ({ selections }) => {
   const [selectedLabels, setSelectedLabels] = useState([]);
   const [colorScheme, setColorScheme] = useState("Viridis");
   const [selectedSelection, setSelectedSelection] = useState("");
+  const svgRef = useRef(null);
+  const getInterpolator = (scheme) => {
+    const map = {
+      Viridis: interpolateViridis,
+      Cividis: interpolateCividis,
+      Blues: interpolateBlues,
+      Greens: interpolateGreens,
+      Reds: interpolateReds,
+      Oranges: interpolateOranges,
+      Purples: interpolatePurples,
+      YlGnBu: interpolateYlGnBu,
+      YlOrRd: interpolateYlOrRd,
+      RdBu: interpolateRdBu,
+    };
+    return map[scheme] || interpolateViridis;
+  };
 
   const colorSchemes = [
     { value: "Viridis", label: "Viridis" },
@@ -23,8 +53,50 @@ const FrequencyHeatmap = ({ selections }) => {
     { value: "RdBu", label: "Red-Blue" },
   ];
 
+  const handleExportPDF = async () => {
+    if (!containerRef.current) return;
+
+    const canvas = await html2canvas(containerRef.current, {
+      backgroundColor: "#1e1e1e",
+      scale: 2,
+      useCORS: true,
+    });
+
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF({
+      orientation: "landscape",
+      unit: "px",
+      format: [canvas.width, canvas.height],
+    });
+
+    pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
+    pdf.save("frequency_heatmap.pdf");
+  };
+
+  const containerRef = useRef(null);
+  const [dimensions, setDimensions] = useState({ width: 800, height: 800 });
+
   useEffect(() => {
     fetchData();
+  }, []);
+
+  useEffect(() => {
+    const observer = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        const { width, height } = entry.contentRect;
+        setDimensions({ width, height });
+      }
+    });
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => {
+      if (containerRef.current) {
+        observer.unobserve(containerRef.current);
+      }
+    };
   }, []);
 
   // Fetch the full dataset
@@ -177,6 +249,77 @@ const FrequencyHeatmap = ({ selections }) => {
     JSON.stringify(finalFrequencyMatrix, null, 2)
   );
 
+  useEffect(() => {
+    if (!svgRef.current || !finalFrequencyMatrix.length) return;
+
+    const svg = d3.select(svgRef.current);
+    svg.selectAll("*").remove(); // Clear previous render
+
+    const width = dimensions.width;
+    const height = dimensions.height;
+    const margin = { top: 150, right: 80, bottom: 80, left: 180 };
+    const cellSize = Math.floor((width - margin.left) / orderedLabels.length);
+
+    const colorScale = d3
+      .scaleSequential()
+      .domain([0, d3.max(finalFrequencyMatrix.flat())])
+      .interpolator(getInterpolator(colorScheme));
+
+    // Add group
+    const g = svg
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    // Draw cells
+    finalFrequencyMatrix.forEach((row, i) => {
+      row.forEach((value, j) => {
+        g.append("rect")
+          .attr("x", j * cellSize)
+          .attr("y", i * cellSize)
+          .attr("width", cellSize)
+          .attr("height", cellSize)
+          .attr("fill", colorScale(value))
+          .append("title")
+          .text(`${orderedLabels[i]} → ${orderedLabels[j]}: ${value}`);
+      });
+    });
+
+    // Add labels
+    const labelG = svg.append("g");
+
+    // Y labels
+    labelG
+      .selectAll(".rowLabel")
+      .data(orderedLabels)
+      .enter()
+      .append("text")
+      .attr("x", margin.left - 6)
+      .attr("y", (d, i) => margin.top + i * cellSize + cellSize / 2)
+      .attr("text-anchor", "end")
+      .attr("dominant-baseline", "middle")
+      .attr("fill", "white")
+      .text((d) => d);
+
+    // X labels
+    labelG
+      .selectAll(".colLabel")
+      .data(orderedLabels)
+      .enter()
+      .append("text")
+      .attr("x", (d, i) => margin.left + i * cellSize + cellSize / 2)
+      .attr("y", margin.top - 6)
+      .attr("text-anchor", "start")
+      .attr(
+        "transform",
+        (d, i) =>
+          `rotate(-45, ${margin.left + i * cellSize + cellSize / 2}, ${
+            margin.top - 6
+          })`
+      )
+      .attr("fill", "white")
+      .text((d) => d);
+  }, [finalFrequencyMatrix, orderedLabels, colorScheme]);
+
   if (loading) {
     return <div>Loading...</div>;
   }
@@ -322,34 +465,39 @@ const FrequencyHeatmap = ({ selections }) => {
                 }),
               }}
             />
+            <button
+              onClick={handleExportPDF}
+              style={{
+                marginTop: "20px",
+                padding: "10px",
+                width: "100%",
+                backgroundColor: "#555",
+                color: "white",
+                border: "none",
+                cursor: "pointer",
+                borderRadius: "5px",
+              }}
+            >
+              Export as PDF
+            </button>
           </div>
         </div>
 
         {/* Heatmap */}
-        <div style={{ flex: 1, padding: "1rem", overflow: "hidden" }}>
-          <Plot
-            data={[
-              {
-                z: finalFrequencyMatrix,
-                x: orderedLabels,
-                y: orderedLabels,
-                type: "heatmap",
-                colorscale: colorScheme,
-              },
-            ]}
-            layout={{
-              title: "Interaction Frequency Heatmap",
-              xaxis: { title: "Target", tickangle: -45, automargin: true },
-              yaxis: { title: "Source", automargin: true },
-              margin: { l: 50, r: 50, t: 50, b: 50 },
-              font: { color: "white" },
-              paper_bgcolor: "#1e1e1e",
-              plot_bgcolor: "#1e1e1e",
-              responsive: true,
-            }}
-            useResizeHandler
+        <div
+          ref={containerRef}
+          style={{
+            flex: 1,
+            padding: "1rem",
+            overflow: "auto",
+            position: "relative",
+          }}
+        >
+          <svg
+            ref={svgRef}
             style={{ width: "100%", height: "100%" }}
-          />
+            preserveAspectRatio="xMinYMin meet"
+          ></svg>
         </div>
       </div>
     </div>
