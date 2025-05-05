@@ -9,7 +9,7 @@
             "files": [
                 {
                     "fileType": "spatialdata.zarr",
-                    "url": "http://127.0.0.1:5000/datasets/Xenium_proper_data.zarr",
+                    "url": "http://oh-cxg-dev.mvls.gla.ac.uk/datasets/Xenium_proper_data.zarr",
                     "options": {
                         "obsFeatureMatrix": {
                             "path": "tables/table/X"
@@ -41,7 +41,7 @@
             "files": [
                 {
                     "fileType": "spatialdata.zarr",
-                    "url": "http://127.0.0.1:5000/datasets/Xenium_proper_data.zarr",
+                    "url": "http://oh-cxg-dev.mvls.gla.ac.uk/datasets/Xenium_proper_data.zarr",
                     "options": {
                         "obsFeatureMatrix": {
                             "path": "tables/table/X"
