@@ -4,7 +4,7 @@ import Select from "react-select";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
-const InteractiveBubblePlot = ({ selections }) => {
+const InteractiveBubblePlot = ({ selections, savedTableSelections }) => {
   const svgRef = useRef();
   const containerRef = useRef();
   const tooltipRef = useRef();
@@ -66,7 +66,17 @@ const InteractiveBubblePlot = ({ selections }) => {
   const fetchFilteredData = async () => {
     if (!selectedSelection) return;
 
-    setLoading(true);
+    // Combine both sources of selections
+    const allSelections = { ...selections, ...savedTableSelections };
+    const selectedData = allSelections[selectedSelection];
+
+    if (selectedData) {
+      // Use the in-memory selection (from either prop source)
+      setData(selectedData);
+      return;
+    }
+
+    // Optional fallback: fetch from API if not found in props
     try {
       const response = await fetch("http://127.0.0.1:5000/filter-table", {
         method: "POST",
@@ -74,16 +84,14 @@ const InteractiveBubblePlot = ({ selections }) => {
         body: JSON.stringify({ selection_name: selectedSelection }),
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+      if (response.ok) {
+        const fetchedData = await response.json();
+        setData(fetchedData);
+      } else {
+        console.error("API error:", response.status);
       }
-
-      const filteredData = await response.json();
-      setData(filteredData);
     } catch (error) {
-      console.error("Error fetching filtered data:", error);
-    } finally {
-      setLoading(false);
+      console.error("Fetch error:", error);
     }
   };
 
@@ -443,11 +451,13 @@ const InteractiveBubblePlot = ({ selections }) => {
             style={{ padding: "5px", marginRight: "10px" }}
           >
             <option value="">All Data</option>
-            {Object.keys(selections).map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
+            {Object.keys({ ...selections, ...savedTableSelections }).map(
+              (name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              )
+            )}
           </select>
           <button onClick={fetchFilteredData} style={{ padding: "5px 10px" }}>
             Apply Filter

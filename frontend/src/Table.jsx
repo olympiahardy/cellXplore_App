@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import Select from "react-select";
 import { DataGrid, GridToolbar, GridOverlay } from "@mui/x-data-grid";
 
-function InteractionDataTable({ selections }) {
+function InteractionDataTable({ selections, onSavedSelectionsChange }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedSelection, setSelectedSelection] = useState("");
@@ -154,15 +154,11 @@ function InteractionDataTable({ selections }) {
       selectedRows.includes(row.id)
     );
 
-    setSavedSelections((prev) => ({
-      ...prev,
-      [newSelectionName]: selectedRowsData,
-    }));
-
-    // Optional: notify parent component if needed
-    if (onSelectionSaved) {
-      onSelectionSaved(newSelectionName, selectedRowsData);
-    }
+    setSavedSelections((prev) => {
+      const updated = { ...prev, [newSelectionName]: selectedRowsData };
+      if (onSavedSelectionsChange) onSavedSelectionsChange(updated);
+      return updated;
+    });
 
     setNewSelectionName("");
   };
@@ -176,23 +172,8 @@ function InteractionDataTable({ selections }) {
   const handleConfirmRename = (oldName) => {
     if (!renameInput.trim()) return;
 
-    setSavedSelections((prev) => {
-      const newSelections = { ...prev };
-      newSelections[renameInput.trim()] = newSelections[oldName];
-      delete newSelections[oldName];
-      return newSelections;
-    });
-
     setRenamingSelection(null);
     setRenameInput("");
-  };
-
-  const handleDeleteSelection = (name) => {
-    setSavedSelections((prev) => {
-      const newSelections = { ...prev };
-      delete newSelections[name];
-      return newSelections;
-    });
   };
 
   const handleFilterSelection = (name) => {
@@ -201,6 +182,15 @@ function InteractionDataTable({ selections }) {
   };
 
   const [showFilters, setShowFilters] = useState(true);
+
+  const handleDeleteSelection = (name) => {
+    setSavedSelections((prev) => {
+      const updated = { ...prev };
+      delete updated[name];
+      if (onSavedSelectionsChange) onSavedSelectionsChange(updated);
+      return updated;
+    });
+  };
 
   // Styles
   const inputStyle = {
