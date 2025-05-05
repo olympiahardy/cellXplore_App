@@ -403,17 +403,9 @@ function StackedProportionBarplot() {
         <div style={{ marginTop: "20px" }}>
           <button
             onClick={() => setShowModal(true)}
-            style={{
-              padding: "10px",
-              backgroundColor: "#007bff",
-              color: "white",
-              border: "none",
-              borderRadius: "5px",
-              cursor: "pointer",
-              width: "100%",
-            }}
+            style={{ marginTop: "10px", padding: "5px 10px", width: "100%" }}
           >
-            Save
+            Save as PDF
           </button>
         </div>
       </div>

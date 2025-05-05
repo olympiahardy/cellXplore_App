@@ -467,18 +467,9 @@ const FrequencyHeatmap = ({ selections }) => {
             />
             <button
               onClick={handleExportPDF}
-              style={{
-                marginTop: "20px",
-                padding: "10px",
-                width: "100%",
-                backgroundColor: "#555",
-                color: "white",
-                border: "none",
-                cursor: "pointer",
-                borderRadius: "5px",
-              }}
+              style={{ marginTop: "10px", padding: "5px 10px", width: "100%" }}
             >
-              Export as PDF
+              Save as PDF
             </button>
           </div>
         </div>

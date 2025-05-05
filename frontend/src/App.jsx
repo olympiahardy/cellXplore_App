@@ -7,7 +7,6 @@ import InteractionDataTable from "./Table.jsx";
 import FrequencyHeatmap from "./Frequency_Heatmap.jsx";
 import InteractiveBubblePlot from "./Bubble_Plot.jsx";
 import StackedProportionBarplot from "./Pathway_Proportion.jsx";
-import SankeyPlot from "./Sankey_Plot.jsx";
 import CircosPlot from "./Circos_Plot.jsx";
 import "./App.css";
 const App = () => {
@@ -70,7 +69,6 @@ const App = () => {
             <Tab>Pathway Proportions</Tab>
             <Tab>Bubble Plot</Tab>
             <Tab>Heatmap</Tab>
-            <Tab>Sankey Plot</Tab>
             <Tab>Circos Plot</Tab>
           </TabList>
 
@@ -117,11 +115,6 @@ const App = () => {
           <TabPanel>
             <div style={{ height: "100%", overflow: "auto" }}>
               <FrequencyHeatmap selections={selections} />
-            </div>
-          </TabPanel>
-          <TabPanel>
-            <div style={{ height: "100%", overflow: "auto" }}>
-              <SankeyPlot />
             </div>
           </TabPanel>
           <TabPanel>

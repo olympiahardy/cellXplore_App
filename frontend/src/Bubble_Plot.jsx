@@ -740,39 +740,9 @@ const InteractiveBubblePlot = ({ selections }) => {
             />
           </div>
         </div>
-
-        {/* Plot Button */}
-        <button
-          onClick={handlePlotButtonClick}
-          disabled={
-            !selectedSourceValues.length || !selectedTargetValues.length
-          }
-          style={{
-            marginTop: "20px",
-            padding: "10px",
-            backgroundColor: "#007bff",
-            color: "white",
-            border: "none",
-            borderRadius: "5px",
-            cursor: "pointer",
-            width: "100%",
-          }}
-        >
-          Plot
-        </button>
-
         <button
           onClick={openExportModal}
-          style={{
-            marginTop: "10px",
-            padding: "10px",
-            backgroundColor: "#28a745",
-            color: "white",
-            border: "none",
-            borderRadius: "5px",
-            cursor: "pointer",
-            width: "100%",
-          }}
+          style={{ marginTop: "10px", padding: "5px 10px", width: "100%" }}
         >
           Save as PDF
         </button>

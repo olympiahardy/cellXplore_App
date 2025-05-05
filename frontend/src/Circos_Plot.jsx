@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import Select from "react-select";
 import * as d3 from "d3";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 import "./App.css";
 
 const CircosPlot = ({ selections }) => {
@@ -133,6 +135,37 @@ const CircosPlot = ({ selections }) => {
     }
   };
 
+  const handleSavePDF = async () => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const svg = container.querySelector("svg");
+    const clonedSvg = svg.cloneNode(true);
+
+    // Wrap in white background for clarity
+    const wrapper = document.createElement("div");
+    wrapper.style.backgroundColor = "white";
+    wrapper.appendChild(clonedSvg);
+    document.body.appendChild(wrapper);
+
+    const canvas = await html2canvas(wrapper, {
+      backgroundColor: "#ffffff",
+      useCORS: true,
+    });
+
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF({
+      orientation: "landscape",
+      unit: "px",
+      format: [canvas.width, canvas.height],
+    });
+
+    pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
+    pdf.save("circos_plot.pdf");
+
+    wrapper.remove();
+  };
+
   useEffect(() => {
     if (
       selectedSources.length > 0 &&
@@ -145,8 +178,8 @@ const CircosPlot = ({ selections }) => {
 
       const width = container.clientWidth;
       const height = container.clientHeight;
-      const innerRadius = Math.min(width, height) / 2 - 400;
-      const outerRadius = Math.min(width, height) / 2 - 350;
+      const innerRadius = Math.min(width, height) / 2 - 250;
+      const outerRadius = Math.min(width, height) / 2 - 200;
       const svg = d3
         .select(containerRef.current)
         .append("svg")
@@ -215,7 +248,7 @@ const CircosPlot = ({ selections }) => {
       // 3. Build D3 chord layout
       const chordLayout = d3
         .chord()
-        .padAngle(0.05)
+        .padAngle(0.08)
         .sortSubgroups(d3.descending)(matrix);
 
       const arc = d3.arc().innerRadius(innerRadius).outerRadius(outerRadius);
@@ -523,6 +556,12 @@ const CircosPlot = ({ selections }) => {
               }}
             />
           </div>
+          <button
+            onClick={handleSavePDF}
+            style={{ marginTop: "10px", padding: "5px 10px", width: "100%" }}
+          >
+            Save as PDF
+          </button>
         </div>
 
         {/* Main Plot Area */}
