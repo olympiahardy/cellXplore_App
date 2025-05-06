@@ -5,7 +5,7 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import "./App.css";
 
-const CircosPlot = ({ selections }) => {
+const CircosPlot = ({ selections, savedTableSelections }) => {
   const containerRef = useRef(null);
   const tooltipRef = useRef(null);
   const [data, setData] = useState([]);
@@ -101,6 +101,20 @@ const CircosPlot = ({ selections }) => {
 
   // Function to fetch filtered data when "Apply Filter" is clicked
   const fetchFilteredData = async () => {
+    const allSelections = { ...selections, ...savedTableSelections };
+    const selectedData = allSelections[selectedSelection];
+
+    if (selectedData) {
+      const processedData = selectedData.map((row) => ({
+        source: row.source,
+        target: row.target,
+        prob: parseFloat(row.lr_probs || row.prob || 0.1),
+      }));
+      setData(processedData);
+      updateColorMapping(processedData);
+      return;
+    }
+
     if (!selectedSelection) {
       fetchData(); // Reset to full dataset if "All Data" is selected
       return;
@@ -469,11 +483,13 @@ const CircosPlot = ({ selections }) => {
               }}
             >
               <option value="">All Data</option>
-              {Object.keys(selections).map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
+              {Object.keys({ ...selections, ...savedTableSelections }).map(
+                (name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                )
+              )}
             </select>
             <button
               onClick={fetchFilteredData}

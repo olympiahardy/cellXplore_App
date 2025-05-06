@@ -126,7 +126,10 @@ const App = () => {
           </TabPanel>
           <TabPanel>
             <div style={{ height: "100%", overflow: "auto" }}>
-              <CircosPlot selections={selections} />
+              <CircosPlot
+                selections={selections}
+                savedTableSelections={savedTableSelections}
+              />
             </div>
           </TabPanel>
         </Tabs>
