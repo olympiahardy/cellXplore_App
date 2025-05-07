@@ -12,6 +12,7 @@ import "./App.css";
 const App = () => {
   const [tabIndex, setTabIndex] = useState(0);
   const [selections, setSelections] = useState({});
+  const [savedTableSelections, setSavedTableSelections] = useState({});
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
@@ -99,7 +100,10 @@ const App = () => {
           </TabPanel>
           <TabPanel>
             <div style={{ height: "100%", overflow: "auto" }}>
-              <InteractionDataTable selections={selections} />
+              <InteractionDataTable
+                selections={selections}
+                onSavedSelectionsChange={setSavedTableSelections}
+              />
             </div>
           </TabPanel>
           <TabPanel>
@@ -109,7 +113,10 @@ const App = () => {
           </TabPanel>
           <TabPanel>
             <div style={{ height: "100%", overflow: "auto" }}>
-              <InteractiveBubblePlot selections={selections} />
+              <InteractiveBubblePlot
+                selections={selections}
+                savedTableSelections={savedTableSelections}
+              />
             </div>
           </TabPanel>
           <TabPanel>
@@ -119,7 +126,10 @@ const App = () => {
           </TabPanel>
           <TabPanel>
             <div style={{ height: "100%", overflow: "auto" }}>
-              <CircosPlot selections={selections} />
+              <CircosPlot
+                selections={selections}
+                savedTableSelections={savedTableSelections}
+              />
             </div>
           </TabPanel>
         </Tabs>

@@ -1,20 +1,18 @@
 import React, { useEffect, useState } from "react";
+import Select from "react-select";
 import { DataGrid, GridToolbar, GridOverlay } from "@mui/x-data-grid";
 
-function InteractionDataTable({ selections }) {
+function InteractionDataTable({ selections, onSavedSelectionsChange }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedSelection, setSelectedSelection] = useState("");
   const [selectedRows, setSelectedRows] = useState([]);
   const [savedSelections, setSavedSelections] = useState({});
   const [newSelectionName, setNewSelectionName] = useState("");
-  const [paginationModel, setPaginationModel] = useState({
-    page: 0,
-    pageSize: 25, // Default 25 rows per page
-  });
   const [searchText, setSearchText] = useState("");
   const [renamingSelection, setRenamingSelection] = useState(null);
   const [renameInput, setRenameInput] = useState("");
+  const [multiFilters, setMultiFilters] = useState({});
 
   const columns = [
     { field: "ligand", headerName: "Ligand", flex: 1 },
@@ -98,6 +96,10 @@ function InteractionDataTable({ selections }) {
     </GridOverlay>
   );
 
+  const stringColumns = columns.filter(
+    (col) => data.length > 0 && typeof data[0][col.field] === "string"
+  );
+
   const exportToCsv = () => {
     const csvRows = [];
 
@@ -121,28 +123,42 @@ function InteractionDataTable({ selections }) {
     link.click();
   };
 
-  const filteredData = data.filter((row) =>
-    Object.values(row).some(
+  const filteredData = data.filter((row) => {
+    const matchesSearch = Object.values(row).some(
       (value) =>
         value &&
         value.toString().toLowerCase().includes(searchText.toLowerCase())
-    )
-  );
+    );
+
+    const matchesFilters = Object.entries(multiFilters).every(
+      ([field, selectedValues]) => {
+        if (!selectedValues || selectedValues.length === 0) return true;
+        return selectedValues.includes(row[field]);
+      }
+    );
+
+    return matchesSearch && matchesFilters;
+  });
+
+  const getUniqueColumnValues = (field) => {
+    const values = new Set();
+    data.forEach((row) => {
+      const value = row[field];
+      if (value !== undefined && value !== null) values.add(value);
+    });
+    return Array.from(values).sort();
+  };
 
   const handleSaveSelection = () => {
     const selectedRowsData = data.filter((row) =>
       selectedRows.includes(row.id)
     );
 
-    setSavedSelections((prev) => ({
-      ...prev,
-      [newSelectionName]: selectedRowsData,
-    }));
-
-    // Optional: notify parent component if needed
-    if (onSelectionSaved) {
-      onSelectionSaved(newSelectionName, selectedRowsData);
-    }
+    setSavedSelections((prev) => {
+      const updated = { ...prev, [newSelectionName]: selectedRowsData };
+      if (onSavedSelectionsChange) onSavedSelectionsChange(updated);
+      return updated;
+    });
 
     setNewSelectionName("");
   };
@@ -156,23 +172,8 @@ function InteractionDataTable({ selections }) {
   const handleConfirmRename = (oldName) => {
     if (!renameInput.trim()) return;
 
-    setSavedSelections((prev) => {
-      const newSelections = { ...prev };
-      newSelections[renameInput.trim()] = newSelections[oldName];
-      delete newSelections[oldName];
-      return newSelections;
-    });
-
     setRenamingSelection(null);
     setRenameInput("");
-  };
-
-  const handleDeleteSelection = (name) => {
-    setSavedSelections((prev) => {
-      const newSelections = { ...prev };
-      delete newSelections[name];
-      return newSelections;
-    });
   };
 
   const handleFilterSelection = (name) => {
@@ -180,41 +181,117 @@ function InteractionDataTable({ selections }) {
     setData(selectedData.map((row, idx) => ({ ...row, id: idx })));
   };
 
+  const [showFilters, setShowFilters] = useState(true);
+
+  const handleDeleteSelection = (name) => {
+    setSavedSelections((prev) => {
+      const updated = { ...prev };
+      delete updated[name];
+      if (onSavedSelectionsChange) onSavedSelectionsChange(updated);
+      return updated;
+    });
+  };
+
+  // Styles
+  const inputStyle = {
+    padding: "0.25rem 0.5rem",
+    borderRadius: "4px",
+    border: "1px solid #555",
+    backgroundColor: "#333",
+    color: "#eee",
+    fontSize: "0.9rem",
+  };
+
+  const buttonStyle = {
+    padding: "0.25rem 0.5rem",
+    backgroundColor: "#333",
+    color: "#eee",
+    border: "1px solid #555",
+    borderRadius: "4px",
+    cursor: "pointer",
+    fontSize: "0.9rem",
+  };
+
+  const dropdownStyle = {
+    padding: "0.25rem",
+    border: "1px solid #555",
+    borderRadius: "4px",
+    fontSize: "0.9rem",
+    background: "#333",
+    color: "#eee",
+  };
+
+  const selectStyles = {
+    control: (base) => ({
+      ...base,
+      backgroundColor: "#333",
+      borderColor: "#555",
+      color: "#eee",
+    }),
+    multiValue: (base) => ({ ...base, backgroundColor: "#555" }),
+    option: (base, state) => ({
+      ...base,
+      backgroundColor: state.isFocused ? "#555" : "#333",
+      color: "#eee",
+    }),
+    singleValue: (base) => ({ ...base, color: "#eee" }),
+    input: (base) => ({ ...base, color: "#eee" }),
+    menu: (base) => ({ ...base, backgroundColor: "#333" }),
+  };
+
+  const dataGridStyles = {
+    backgroundColor: "#1e1e1e",
+    color: "#eee",
+    border: "none",
+    fontSize: "0.85rem",
+    "& .MuiDataGrid-columnHeaders": {
+      backgroundColor: "#2a2a2a",
+      borderBottom: "1px solid #555",
+    },
+    "& .MuiDataGrid-columnHeader, & .MuiDataGrid-columnHeaderTitle": {
+      backgroundColor: "#2a2a2a",
+      color: "#eee",
+    },
+    "& .MuiDataGrid-row": {
+      backgroundColor: "#1e1e1e",
+      "&:nth-of-type(even)": { backgroundColor: "#222" },
+    },
+    "& .MuiDataGrid-cell": { color: "#eee", borderBottom: "1px solid #333" },
+    "& .MuiDataGrid-footerContainer": {
+      backgroundColor: "#1e1e1e",
+      color: "#eee",
+    },
+    "& .MuiTablePagination-root": { color: "#eee", backgroundColor: "#1e1e1e" },
+    "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows, & .MuiTablePagination-actions":
+      { color: "#eee" },
+    "& .MuiSelect-icon": { color: "#eee" },
+  };
+
   return (
     <div
-      style={{
-        height: "100%",
-        width: "100%",
-        backgroundColor: "#1e1e1e",
-        fontFamily: "'Inter', 'Roboto', 'Helvetica Neue', sans-serif",
-        display: "flex",
-        flexDirection: "column",
-        gap: "0.5rem",
-      }}
+      className="interaction-data-table"
+      style={{ backgroundColor: "#1e1e1e", height: "100%", width: "100%" }}
     >
-      {/* Top Controls */}
+      {/* Top Bar: Selection, Search, Export */}
       <div
         style={{
           display: "flex",
-          alignItems: "center",
           justifyContent: "space-between",
           padding: "0.5rem",
           flexWrap: "wrap",
+          gap: "0.5rem",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          {/* Filter Dropdown */}
+          <span
+            style={{ color: "#ccc", fontSize: "0.9rem", marginRight: "0.5rem" }}
+          >
+            Single Cell View tab selections:
+          </span>
           <select
             value={selectedSelection}
             onChange={(e) => setSelectedSelection(e.target.value)}
-            style={{
-              padding: "0.25rem",
-              border: "1px solid #555",
-              borderRadius: "4px",
-              fontSize: "0.9rem",
-              background: "#333",
-              color: "#eee",
-            }}
+            style={dropdownStyle}
           >
             <option value="">All Data</option>
             {Object.keys(selections).map((name) => (
@@ -223,140 +300,122 @@ function InteractionDataTable({ selections }) {
               </option>
             ))}
           </select>
-
-          {/* Filter and Reset Buttons */}
-          <button
-            onClick={fetchFilteredData}
-            style={{
-              padding: "0.25rem 0.5rem",
-              backgroundColor: "#333",
-              border: "1px solid #555",
-              color: "#eee",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
-          >
+          <button style={buttonStyle} onClick={fetchFilteredData}>
             Apply
           </button>
-          <button
-            onClick={fetchData}
-            style={{
-              padding: "0.25rem 0.5rem",
-              backgroundColor: "#333",
-              border: "1px solid #555",
-              color: "#eee",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
-          >
+          <button style={buttonStyle} onClick={fetchData}>
             Reset
           </button>
         </div>
 
-        {/* Search + Page Size + Export */}
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          {/* Search Bar */}
           <input
             type="text"
-            placeholder="Search..."
+            placeholder="Search in table..."
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            style={{
-              padding: "0.25rem 0.5rem",
-              borderRadius: "4px",
-              border: "1px solid #555",
-              backgroundColor: "#333",
-              color: "#eee",
-              fontSize: "0.9rem",
-            }}
+            style={inputStyle}
           />
-
-          {/* Page Size Select */}
-          <select
-            value={paginationModel.pageSize}
-            onChange={(e) =>
-              setPaginationModel((prev) => ({
-                ...prev,
-                pageSize: parseInt(e.target.value),
-                page: 0,
-              }))
-            }
-            style={{
-              padding: "0.25rem",
-              border: "1px solid #555",
-              borderRadius: "4px",
-              fontSize: "0.9rem",
-              background: "#333",
-              color: "#eee",
-            }}
-          >
-            {[5, 10, 20, 25, 50].map((size) => (
-              <option key={size} value={size}>
-                Show {size}
-              </option>
-            ))}
-          </select>
-
-          {/* Export CSV */}
-          <button
-            onClick={exportToCsv}
-            style={{
-              padding: "0.25rem 0.5rem",
-              backgroundColor: "#333",
-              color: "#eee",
-              border: "1px solid #555",
-              borderRadius: "4px",
-              fontSize: "0.9rem",
-              cursor: "pointer",
-            }}
-          >
+          <button style={buttonStyle} onClick={exportToCsv}>
             Export CSV
+          </button>
+          <button style={buttonStyle} onClick={() => setMultiFilters({})}>
+            Clear Filters
           </button>
         </div>
       </div>
 
-      {/* Save Selection Controls */}
+      {/* Toggleable Filter Panel */}
+      <div style={{ padding: "0 0.5rem", textAlign: "center" }}>
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          style={{ ...buttonStyle, marginBottom: "0.5rem" }}
+        >
+          {showFilters ? "Hide Filters" : "Show Filters"}
+        </button>
+
+        {showFilters && (
+          <div>
+            <h3
+              style={{
+                color: "#ccc",
+                fontSize: "1rem",
+                marginBottom: "0.5rem",
+              }}
+            >
+              Manual Table Filters
+            </h3>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                flexWrap: "wrap",
+                gap: "1rem",
+              }}
+            >
+              {stringColumns.map((col) => {
+                const options = Array.from(
+                  new Set(data.map((row) => row[col.field]))
+                )
+                  .filter(Boolean)
+                  .sort()
+                  .map((val) => ({ label: val, value: val }));
+                return (
+                  <div key={col.field} style={{ minWidth: "200px" }}>
+                    <label style={{ color: "#ccc", fontSize: "0.8rem" }}>
+                      {col.headerName}
+                    </label>
+                    <Select
+                      isMulti
+                      options={options}
+                      value={(multiFilters[col.field] || []).map((val) => ({
+                        label: val,
+                        value: val,
+                      }))}
+                      onChange={(selected) =>
+                        setMultiFilters((prev) => ({
+                          ...prev,
+                          [col.field]: selected.map((s) => s.value),
+                        }))
+                      }
+                      styles={selectStyles}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Save Selection */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
+          padding: "0.5rem",
           gap: "0.5rem",
-          paddingLeft: "0.5rem",
         }}
       >
         <input
           type="text"
           value={newSelectionName}
           onChange={(e) => setNewSelectionName(e.target.value)}
-          placeholder="Save selection as..."
-          style={{
-            padding: "0.25rem",
-            borderRadius: "4px",
-            border: "1px solid #555",
-            backgroundColor: "#333",
-            color: "#eee",
-          }}
+          placeholder="Save row selection as..."
+          style={inputStyle}
         />
         <button
           onClick={handleSaveSelection}
           disabled={!newSelectionName || selectedRows.length === 0}
-          style={{
-            padding: "0.25rem 0.5rem",
-            backgroundColor: "#333",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            fontSize: "0.9rem",
-            cursor: "pointer",
-          }}
+          style={buttonStyle}
         >
-          Save Selection
+          Save Row Selection
         </button>
       </div>
 
       {/* Saved Selections */}
-      <div style={{ paddingLeft: "0.5rem", color: "#eee" }}>
-        <h4>Saved Selections:</h4>
+      <div style={{ padding: "0.5rem", color: "#eee" }}>
+        <h4>Saved Table Selections:</h4>
         <ul style={{ listStyle: "none", padding: 0 }}>
           {Object.keys(savedSelections).map((name) => (
             <li key={name} style={{ marginBottom: "0.5rem" }}>
@@ -365,13 +424,7 @@ function InteractionDataTable({ selections }) {
                   <input
                     value={renameInput}
                     onChange={(e) => setRenameInput(e.target.value)}
-                    style={{
-                      padding: "0.25rem",
-                      borderRadius: "4px",
-                      background: "#333",
-                      color: "#eee",
-                      border: "1px solid #555",
-                    }}
+                    style={inputStyle}
                   />
                   <button onClick={() => handleConfirmRename(name)}>
                     Save
@@ -399,17 +452,11 @@ function InteractionDataTable({ selections }) {
                   >
                     Rename
                   </button>
-
-                  {/* 🆕 New FILTER Button */}
                   <button
                     onClick={() => handleFilterSelection(name)}
                     style={{
+                      ...buttonStyle,
                       backgroundColor: "#1976d2",
-                      border: "none",
-                      color: "white",
-                      padding: "0.25rem 0.5rem",
-                      borderRadius: "4px",
-                      cursor: "pointer",
                       fontSize: "0.8rem",
                     }}
                   >
@@ -417,14 +464,7 @@ function InteractionDataTable({ selections }) {
                   </button>
                   <button
                     onClick={() => handleDeleteSelection(name)}
-                    style={{
-                      backgroundColor: "#333",
-                      border: "none",
-                      color: "white",
-                      padding: "0.25rem 0.5rem",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                    }}
+                    style={buttonStyle}
                   >
                     Delete
                   </button>
@@ -436,63 +476,23 @@ function InteractionDataTable({ selections }) {
       </div>
 
       {/* Data Table */}
-      <div style={{ flexGrow: 1, width: "100%" }}>
+      <div style={{ flexGrow: 1 }}>
         <DataGrid
-          rows={filteredData.slice(
-            paginationModel.page * paginationModel.pageSize,
-            (paginationModel.page + 1) * paginationModel.pageSize
-          )}
+          rows={filteredData}
           columns={columns}
           loading={loading}
-          paginationModel={paginationModel}
-          onPaginationModelChange={setPaginationModel}
-          rowCount={filteredData.length}
-          checkboxSelection // ✅ Allow user to click checkboxes
+          checkboxSelection
           onRowSelectionModelChange={(newSelection) =>
             setSelectedRows(newSelection)
           }
           rowSelectionModel={selectedRows}
           pagination
-          disableColumnMenu
-          sx={{
-            backgroundColor: "#1e1e1e",
-            color: "#eee",
-            border: "none",
-            fontSize: "0.85rem",
-            "& .MuiDataGrid-columnHeaders": {
-              backgroundColor: "#2a2a2a",
-              borderBottom: "1px solid #555",
-            },
-            "& .MuiDataGrid-columnHeader, & .MuiDataGrid-columnHeaderTitle": {
-              backgroundColor: "#2a2a2a",
-              color: "#eee",
-            },
-            "& .MuiDataGrid-row": {
-              backgroundColor: "#1e1e1e",
-              "&:nth-of-type(even)": {
-                backgroundColor: "#222",
-              },
-            },
-            "& .MuiDataGrid-cell": {
-              color: "#eee",
-              borderBottom: "1px solid #333",
-            },
-            "& .MuiDataGrid-footerContainer": {
-              backgroundColor: "#1e1e1e",
-              color: "#eee",
-            },
-            "& .MuiTablePagination-root": {
-              color: "#eee",
-              backgroundColor: "#1e1e1e",
-            },
-            "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows, & .MuiTablePagination-actions":
-              {
-                color: "#eee",
-              },
-            "& .MuiSelect-icon": {
-              color: "#eee",
-            },
+          pageSizeOptions={[5, 10, 20, 25, 50]}
+          initialState={{
+            pagination: { paginationModel: { pageSize: 10, page: 0 } },
           }}
+          disableColumnMenu
+          sx={dataGridStyles}
         />
       </div>
     </div>
