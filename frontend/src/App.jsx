@@ -31,7 +31,7 @@ const App = () => {
         {/* Logo and Title */}
         <div style={{ display: "flex", alignItems: "center" }}>
           <img
-            src="http://127.0.0.1:5000/frontend/cellXplore.png"
+            src="frontend/cellXplore.png"
             alt="cellXplore Logo"
             style={{ width: "80px", height: "80px", marginRight: "10px" }}
           />

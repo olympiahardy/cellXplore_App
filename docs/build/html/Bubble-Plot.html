@@ -1,0 +1,141 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bubble Plot &mdash; cellXplore 1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+    <link rel="shortcut icon" href="_static/cellXplore.png"/>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=f2a433a1"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Circos Plot" href="Circos-Plot.html" />
+    <link rel="prev" title="Interaction Table" href="Interaction-Table.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            cellXplore
+              <img src="_static/cellXplore.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">📘 Table of Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="What-is-CellXplore.html">What is cellXplore?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Getting-Started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Vitessce-Viewer.html">Single Cell View</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Interaction-Table.html">Interaction Table</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Bubble Plot</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#plotting-single-cell-view-table-row-selections">Plotting Single Cell View/Table row selections</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Circos-Plot.html">Circos Plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Frequency-Heatmap.html">Heatmap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Pathway-Proportion.html">Pathway Proportion Plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Dual-Gene-Viewer.html">Ligand-Receptor Search</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Tips-and-Troubleshooting.html">Tips &amp; Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Citation.html">Citation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">cellXplore</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Bubble Plot</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/Bubble-Plot.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="bubble-plot">
+<h1>Bubble Plot<a class="headerlink" href="#bubble-plot" title="Link to this heading"></a></h1>
+<p>A bubble plot is a convenient way for us to visualise cell-cell interactions of interest between cell types. This plot has ligand-receptor pairs along the y-axis and cell type pairs along the x-axis, the size of the bubble is determined by the p-value with larger p-values resulting in a larger bubble and the colour of the bubble represents how strong/probable an interaction is.</p>
+<p>First, select the columns in your interaction table that contains the source cell type information, after this another drop-down menu will appear that contains the unqiue cell type values in your source column here you can choose multiple cell types of interest that are expressing a ligand. Similarly, we then repeat the same for the target column, these will be the cell types of interest that are expressing the receptor. After this we can proceed and choose the columns that contain our interaction probability and p-value data at which point the plot will automatically render.</p>
+<p><img alt="Bubble plot sidebar" src="_images/bubble_plot_sidebar.png" /></p>
+<p>We can also change the colour scheme for the plot using the dropdown menu to select various colour maps. We can also use the slider to select different p-value threshold cutoffs allowing control for highly significant interactions. Finally, in the case where our parameters have returned too many interactions we can focus on the strongest interactions by using the last dropdown which allows us to visualise up to the top 50 interactions ordered by their probability.</p>
+<p><img alt="Bubble plot sidebar" src="_images/bubble_plot_sidebar_number.png" /></p>
+<section id="plotting-single-cell-view-table-row-selections">
+<h2>Plotting Single Cell View/Table row selections<a class="headerlink" href="#plotting-single-cell-view-table-row-selections" title="Link to this heading"></a></h2>
+<p>At the top of the sidebar we can also pass our previous selections we made in the Single Cell View tab and Interactions Table tab by using the dropdown menu. Once you have selected a value from the dropdown menu and click ‘Apply Filter’ the source and target cell type values will be limited to only those that appear in your selections, allowing you to plot your interactions of interest.</p>
+<p><img alt="Bubble plot sidebar" src="_images/bubble_plot_selections.png" /></p>
+<p>You can also hover over each bubble and a hover box will appear that will show you additional informatino about the plotted interactions such as:
+- The ligand receptor pair
+- The interacting cell types
+- The interaction probability
+- The p-value of the interaction</p>
+<p><img alt="Bubble plot hover tip" src="_images/bubble_plot_hovertip.png" /></p>
+<p>Once you are happy with your bubble plot you can save it by clicking the ‘Save as PDF’ button that will show you a pop-up box allowing you to input the filename, plot dimensions in centimetres and the DPI for further use.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Interaction-Table.html" class="btn btn-neutral float-left" title="Interaction Table" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Circos-Plot.html" class="btn btn-neutral float-right" title="Circos Plot" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Olympia Hardy.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
