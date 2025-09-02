@@ -3,6 +3,8 @@ import Select from "react-select";
 import * as d3 from "d3";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { ResizableBox } from "react-resizable";
+import "react-resizable/css/styles.css";
 
 function StackedProportionBarplot() {
   const [data, setData] = useState([]);
@@ -11,6 +13,7 @@ function StackedProportionBarplot() {
   const [pathwayColumn, setPathwayColumn] = useState(null);
   const [topN, setTopN] = useState(10);
   const [loading, setLoading] = useState(true);
+  const [chartSize, setChartSize] = useState({ width: 800, height: 500 });
   const d3Container = useRef();
 
   const [showModal, setShowModal] = useState(false);
@@ -26,6 +29,26 @@ function StackedProportionBarplot() {
       console.error("Chart container not found.");
       return;
     }
+    const svgElement = container.querySelector("svg");
+    if (!svgElement) {
+      console.error("SVG element not found for PDF export.");
+      return; // or show a message to the user
+    }
+
+    const svg = d3.select(svgElement);
+    const texts = svg.selectAll("text");
+    const originalFills = [];
+    texts.each(function () {
+      originalFills.push(d3.select(this).style("fill"));
+    });
+    texts.style("fill", "black");
+
+    const axisLines = svg.selectAll(".domain, .tick line");
+    const originalStrokes = [];
+    axisLines.each(function () {
+      originalStrokes.push(d3.select(this).style("stroke"));
+    });
+    axisLines.style("stroke", "black");
 
     // Convert cm to pixels at the selected DPI
     const pxPerCm = pdfDPI / 2.54;
@@ -33,9 +56,17 @@ function StackedProportionBarplot() {
     const pdfHeightPx = pdfHeightCm * pxPerCm;
 
     const canvas = await html2canvas(container, {
-      backgroundColor: "#1e1e1e",
+      backgroundColor: null,
       useCORS: true,
       scale: pdfDPI / 96, // For high-res export
+    });
+
+    texts.each(function (d, i) {
+      d3.select(this).style("fill", originalFills[i]);
+    });
+
+    axisLines.each(function (d, i) {
+      d3.select(this).style("stroke", originalStrokes[i]);
     });
 
     const imgData = canvas.toDataURL("image/png");
@@ -53,12 +84,12 @@ function StackedProportionBarplot() {
   };
 
   const openExportModal = () => {
-    const svg = svgRef.current;
-    if (svg) {
-      const bbox = svg.getBBox(); // Gets the actual size of SVG content
+    const svgNode = d3Container.current.querySelector("svg");
+    if (svgNode) {
+      const bbox = svgNode.getBBox(); // Gets the actual size of SVG content
       const pxPerCm = pdfDPI / 2.54;
-      setPdfWidthCm((bbox.width || svg.clientWidth) / pxPerCm);
-      setPdfHeightCm((bbox.height || svg.clientHeight) / pxPerCm);
+      setPdfWidthCm((bbox.width || svgNode.clientWidth) / pxPerCm);
+      setPdfHeightCm((bbox.height || svgNode.clientHeight) / pxPerCm);
     }
     setShowModal(true);
   };
@@ -162,15 +193,15 @@ function StackedProportionBarplot() {
     d3.select(d3Container.current).selectAll("*").remove();
 
     // Dimensions
-    const margin = { top: 30, right: 30, bottom: 60, left: 60 },
-      width = 800 - margin.left - margin.right,
-      height = 500 - margin.top - margin.bottom;
+    const margin = { top: 30, right: 30, bottom: 60, left: 60 };
+    const width = chartSize.width - margin.left - margin.right;
+    const height = chartSize.height - margin.top - margin.bottom;
 
     const svg = d3
       .select(d3Container.current)
       .append("svg")
-      .attr("width", width + margin.left + margin.right)
-      .attr("height", height + margin.top + margin.bottom)
+      .attr("width", chartSize.width)
+      .attr("height", chartSize.height)
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
@@ -266,18 +297,18 @@ function StackedProportionBarplot() {
         tooltip.style("opacity", 0);
       });
 
-    svg
+    const xAxis = svg
       .append("g")
       .attr("transform", `translate(0,${height})`)
-      .call(d3.axisBottom(x))
-      .selectAll("text")
-      .style("font-size", "14px");
+      .call(d3.axisBottom(x));
+    xAxis.selectAll("text").style("font-size", "14px").style("fill", "white");
+    xAxis.selectAll(".domain, .tick line").style("stroke", "white");
 
-    svg
+    const yAxis = svg
       .append("g")
-      .call(d3.axisLeft(y).tickFormat(d3.format(".0%")))
-      .selectAll("text")
-      .style("font-size", "14px");
+      .call(d3.axisLeft(y).tickFormat(d3.format(".0%")));
+    yAxis.selectAll("text").style("font-size", "14px").style("fill", "white");
+    yAxis.selectAll(".domain, .tick line").style("stroke", "white");
 
     // Add legend
     const legend = svg
@@ -302,7 +333,7 @@ function StackedProportionBarplot() {
       .style("text-anchor", "end")
       .style("fill", "white")
       .text((d) => d);
-  }, [selectedColumn, pathwayColumn, data, topN]);
+  }, [selectedColumn, pathwayColumn, data, topN, chartSize]);
 
   const columnOptions = stringColumns.map((col) => ({
     value: col,
@@ -402,7 +433,7 @@ function StackedProportionBarplot() {
         </div>
         <div style={{ marginTop: "20px" }}>
           <button
-            onClick={() => setShowModal(true)}
+            onClick={openExportModal}
             style={{ marginTop: "10px", padding: "5px 10px", width: "100%" }}
           >
             Save as PDF
@@ -412,15 +443,28 @@ function StackedProportionBarplot() {
 
       {/* Main content area for D3 chart */}
       <div style={{ flex: 1, padding: "1rem", position: "relative" }}>
-        <div
-          ref={d3Container}
-          style={{
-            width: "100%",
-            height: "100%",
-            minHeight: "520px",
-            border: "1px solid #444",
+        <ResizableBox
+          width={chartSize.width}
+          height={chartSize.height}
+          onResizeStop={(e, data) => {
+            setChartSize({ width: data.size.width, height: data.size.height });
           }}
-        />
+          minConstraints={[300, 200]}
+          maxConstraints={[1200, 1000]}
+          style={{
+            border: "1px solid #444",
+            position: "relative",
+            overflow: "hidden",
+          }}
+        >
+          <div
+            ref={d3Container}
+            style={{
+              width: "100%",
+              height: "100%",
+            }}
+          />
+        </ResizableBox>
       </div>
       <div
         id="tooltip"
@@ -497,7 +541,7 @@ function StackedProportionBarplot() {
 
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <button
-                onClick={openExportModal}
+                onClick={() => setShowModal(false)}
                 style={{
                   backgroundColor: "#666",
                   color: "white",

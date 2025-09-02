@@ -13,6 +13,7 @@ function InteractionDataTable({ selections, onSavedSelectionsChange }) {
   const [renamingSelection, setRenamingSelection] = useState(null);
   const [renameInput, setRenameInput] = useState("");
   const [multiFilters, setMultiFilters] = useState({});
+  const [spatialGenes, setSpatialGenes] = useState([]);
 
   const columns = [
     { field: "ligand", headerName: "Ligand", flex: 1 },
@@ -23,6 +24,7 @@ function InteractionDataTable({ selections, onSavedSelectionsChange }) {
     { field: "cellchat_pvals", headerName: "P-value", flex: 1 },
     { field: "interaction_name", headerName: "Interaction", flex: 1 },
     { field: "pathway_name", headerName: "Pathway", flex: 1 },
+    { field: "condition", headerName: "Condition", flex: 1 },
   ];
 
   // Function to round floats to 4 significant figures
@@ -86,6 +88,24 @@ function InteractionDataTable({ selections, onSavedSelectionsChange }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    const fetchSpatialGenes = async () => {
+      const res = await fetch("http://127.0.0.1:5000/spatial-genes");
+      const genes = await res.json(); // assume it returns an array
+      setSpatialGenes(genes);
+    };
+    fetchSpatialGenes();
+  }, []);
+
+  const handleSpatialGeneFilter = () => {
+    const filtered = data.filter(
+      (row) =>
+        spatialGenes.includes(row.ligand) && spatialGenes.includes(row.receptor)
+    );
+    const reindexed = filtered.map((row, idx) => ({ ...row, id: idx }));
+    setData(reindexed);
   };
 
   const CustomNoRowsOverlay = () => (
@@ -276,51 +296,77 @@ function InteractionDataTable({ selections, onSavedSelectionsChange }) {
       <div
         style={{
           display: "flex",
-          justifyContent: "space-between",
-          padding: "0.5rem",
-          flexWrap: "wrap",
+          flexDirection: "column",
           gap: "0.5rem",
+          padding: "0.5rem",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <span
-            style={{ color: "#ccc", fontSize: "0.9rem", marginRight: "0.5rem" }}
-          >
-            Single Cell View tab selections:
-          </span>
-          <select
-            value={selectedSelection}
-            onChange={(e) => setSelectedSelection(e.target.value)}
-            style={dropdownStyle}
-          >
-            <option value="">All Data</option>
-            {Object.keys(selections).map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
-          <button style={buttonStyle} onClick={fetchFilteredData}>
-            Apply
-          </button>
-          <button style={buttonStyle} onClick={fetchData}>
-            Reset
-          </button>
+        {/* Row 1: Selection left, search/export right */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "1rem",
+          }}
+        >
+          {/* Left: Single Cell Selection */}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <span style={{ color: "#ccc", fontSize: "0.9rem" }}>
+              Single Cell View tab selections:
+            </span>
+            <select
+              value={selectedSelection}
+              onChange={(e) => setSelectedSelection(e.target.value)}
+              style={dropdownStyle}
+            >
+              <option value="">All Data</option>
+              {Object.keys(selections).map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+            <button style={buttonStyle} onClick={fetchFilteredData}>
+              Apply
+            </button>
+            <button style={buttonStyle} onClick={fetchData}>
+              Reset
+            </button>
+          </div>
+
+          {/* Right: Search and export */}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <input
+              type="text"
+              placeholder="Search in table..."
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              style={inputStyle}
+            />
+            <button style={buttonStyle} onClick={exportToCsv}>
+              Export CSV
+            </button>
+            <button style={buttonStyle} onClick={() => setMultiFilters({})}>
+              Clear Filters
+            </button>
+          </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <input
-            type="text"
-            placeholder="Search in table..."
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            style={inputStyle}
-          />
-          <button style={buttonStyle} onClick={exportToCsv}>
-            Export CSV
-          </button>
-          <button style={buttonStyle} onClick={() => setMultiFilters({})}>
-            Clear Filters
+        {/* Row 2: Filter for spatial genes */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-start",
+            gap: "0.5rem",
+          }}
+        >
+          <span style={{ color: "#ccc", fontSize: "0.9rem" }}>
+            Filter genes only present in spatial data:
+          </span>
+          <button style={buttonStyle} onClick={handleSpatialGeneFilter}>
+            Filter for Spatial Genes
           </button>
         </div>
       </div>

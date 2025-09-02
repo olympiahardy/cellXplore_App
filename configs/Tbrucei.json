@@ -23,12 +23,12 @@
                         ],
                         "obsSets": [
                             {
-                                "name": "Clusters",
-                                "path": "obs/clusters"
+                                "name": "Cell Type",
+                                "path": "obs/Cell_Subclusters"
                             },
                             {
-                                "name": "Cell Type",
-                                "path": "obs/Cell_Type"
+                                "name": "Infection Status",
+                                "path": "obs/Infection_Status"
                             }
                         ],
                         "obsFeatureMatrix": {
@@ -56,22 +56,22 @@
                         "obsSets": {
                             "obsSets": [
                                 {
-                                    "name": "Clusters",
-                                    "path": "tables/table/obs/leiden"
+                                    "name": "Brain Region",
+                                    "path": "tables/table/obs/brain_region"
                                 },
                                 {
                                     "name": "Cell Type",
-                                    "path": "tables/table/obs/clusters"
+                                    "path": "tables/table/obs/cell_type"
                                 }
                             ],
                             "tablePath": "tables/table"
                         },
                         "obsSpots": {
-                            "path": "shapes/cell_circles",
+                            "path": "shapes/naive",
                             "tablePath": "tables/table"
                         },
                         "image": {
-                            "path": "images/morphology_focus"
+                            "path": "images/naive_lowres_image"
                         }
                     },
                     "coordinationValues": {
