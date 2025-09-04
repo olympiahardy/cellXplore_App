@@ -19,8 +19,8 @@ from vitessce import (
 )
 
 
-# app = Flask(__name__, static_folder="./dist", static_url_path="/dist")
-app = Flask(__name__)
+app = Flask(__name__, static_folder="./dist", static_url_path="/dist")
+# app = Flask(__name__)
 CORS(app, origins=["http://localhost:5174"])
 # CORS(app, origins=["*"])
 
@@ -32,8 +32,8 @@ spatial_zarr_cache = None
 # Paths
 MERGED_ZARR_FILE = "sc_FPPE_breast_cancer.zarr"
 XENIUM_ZARR_FILE = "Xenium_proper_data.zarr"  # Xenium dataset
-CONFIG_DIR = "/Users/olympia/Documents/cellXplore/cellXplore_App/configs/"
-BASE_DIR = "/Users/olympia/Documents/cellXplore/cellXplore_App/datasets/"
+CONFIG_DIR = "/home/olympia/cellXplore_App/configs/"
+BASE_DIR = "/home/olympia/cellXplore_App/datasets/"
 SAMPLE_NAME = "Breast Cancer"  # Sample name
 DESCRIPTION = "High resolution mapping of the tumor microenvironment using integrated single-cell, spatial and in situ analysis. Janesick, A., Shelansky, R., Gottscho, A.D. et al. Nat Commun 14, 8353 (2023). https://doi.org/10.1038/s41467-023-43458-x"
 # DESCRIPTION = "Quintana, J.F., Chandrasegaran, P., Sinton, M.C. et al. Single cell and spatial transcriptomic analyses reveal microglia-plasma cell crosstalk in the brain during Trypanosoma brucei infection. Nat Commun 13, 5752 (2022). https://doi.org/10.1038/s41467-022-33542-z"
@@ -205,7 +205,7 @@ def generate_config(
 
         # Save the generated configuration
         config_dict = vc.to_dict(
-            base_url="http://127.0.0.1:5000/datasets"
+            base_url="http://oh-cxg-dev.mvls.gla.ac.uk/datasets"
         )  # config_dict = vc.to_dict(base_url="http://127.0.0.1:5000/datasets")
         output_path = os.path.join(output_dir, f"{sample}.json")
         with open(output_path, "w") as json_file:
@@ -376,7 +376,7 @@ def generate_dual_scatter_config(xenium_zarr_file, output_dir, base_dir):
 
         # Save the generated configuration
         config_dict = vc.to_dict(
-            base_url="http://127.0.0.1:5000/datasets"
+            base_url="http://oh-cxg-dev.mvls.gla.ac.uk/datasets"
         )  # config_dict = vc.to_dict(base_url="http://127.0.0.1:5000/datasets")
         output_path = os.path.join(output_dir, "dual_sc.json")
         with open(output_path, "w") as json_file:
@@ -407,16 +407,16 @@ def get_dual_config():
         return jsonify({"error": str(e)}), 500
 
 
-# @app.route("/")
-# def serve_spa_default():
-#     print("Serving default")
-#     return app.send_static_file("index.html")
+@app.route("/")
+def serve_spa_default():
+    print("Serving default")
+    return app.send_static_file("index.html")
 
 
-# @app.route("/<path:path>")
-# def serve_spa_files(path):
-#     print("Serving " + path)
-#     return app.send_static_file(path)
+@app.route("/<path:path>")
+def serve_spa_files(path):
+    print("Serving " + path)
+    return app.send_static_file(path)
 
 
 @app.route("/data-table", methods=["GET"])

@@ -78,7 +78,7 @@ const InteractiveBubblePlot = ({ selections, savedTableSelections }) => {
 
     // Optional fallback: fetch from API if not found in props
     try {
-      const response = await fetch("http://127.0.0.1:5000/filter-table", {
+      const response = await fetch("http://oh-cxg-dev.mvls.gla.ac.uk/breastcancer/filter-table", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ selection_name: selectedSelection }),
@@ -99,7 +99,7 @@ const InteractiveBubblePlot = ({ selections, savedTableSelections }) => {
     const fetchData = async () => {
       try {
         const response = await fetch(
-          "http://127.0.0.1:5000/get_cellchat_bubble"
+          "http://oh-cxg-dev.mvls.gla.ac.uk/breastcancer/get_cellchat_bubble"
         );
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);

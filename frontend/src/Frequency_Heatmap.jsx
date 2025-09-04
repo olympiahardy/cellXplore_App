@@ -103,7 +103,7 @@ const FrequencyHeatmap = ({ selections }) => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await fetch("http://127.0.0.1:5000/get_cellchat_data");
+      const response = await fetch("http://oh-cxg-dev.mvls.gla.ac.uk/breastcancer/get_cellchat_data");
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
@@ -135,7 +135,7 @@ const FrequencyHeatmap = ({ selections }) => {
 
     setLoading(true);
     try {
-      const response = await fetch("http://127.0.0.1:5000/filter-table", {
+      const response = await fetch("http://oh-cxg-dev.mvls.gla.ac.uk/breastcancer/filter-table", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ selection_name: selectedSelection }),
