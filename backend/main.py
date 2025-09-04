@@ -240,7 +240,7 @@ def get_config():
         return jsonify({"error": str(e)}), 500
 
 
-def generate_dual_scatter_config(xenium_zarr_file, output_dir, base_dir):
+def generate_dual_scatter_config(xenium_zarr_file, output_dir, base_dir, sample):
     try:
         os.makedirs(output_dir, exist_ok=True)
 
@@ -378,7 +378,7 @@ def generate_dual_scatter_config(xenium_zarr_file, output_dir, base_dir):
         config_dict = vc.to_dict(
             base_url="http://oh-cxg-dev.mvls.gla.ac.uk/datasets"
         )  # config_dict = vc.to_dict(base_url="http://127.0.0.1:5000/datasets")
-        output_path = os.path.join(output_dir, "dual_sc.json")
+        output_path = os.path.join(output_dir, f"{sample}_dual_sc.json")
         with open(output_path, "w") as json_file:
             json.dump(config_dict, json_file, indent=4)
 
@@ -396,7 +396,7 @@ generate_dual_scatter_config(XENIUM_ZARR_FILE, CONFIG_DIR, BASE_DIR)
 @app.route("/get_dual_config", methods=["GET"])
 def get_dual_config():
     try:
-        config_path = os.path.join(CONFIG_DIR, "dual_sc.json")
+        config_path = os.path.join(CONFIG_DIR, f"{SAMPLE_NAME}_dual_sc.json")
         if not os.path.exists(config_path):
             return jsonify({"error": "Configuration file not found"}), 404
 
@@ -792,4 +792,4 @@ def serve_datasets(filename):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0", port=5000)
