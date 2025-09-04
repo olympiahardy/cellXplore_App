@@ -10,7 +10,7 @@ const DualScatterLR = ({ onSelectionChange }) => {
 
   const fetchConfig = async () => {
     try {
-      const response = await fetch("http://oh-cxg-dev.mvls.gla.ac.uk/breastcancer/get_dual_config");
+      const response = await fetch("http://oh-cxg-dev.mvls.gla.ac.uk/braintbrucei/get_dual_config");
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }

@@ -4,8 +4,8 @@ import react from "@vitejs/plugin-react";
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: `http://oh-cxg-dev.mvls.gla.ac.uk/breastcancer/`,
+  base: `http://oh-cxg-dev.mvls.gla.ac.uk/braintbrucei/`,
   server: {
-   port: 5000
+   port: 5001
   }
 });

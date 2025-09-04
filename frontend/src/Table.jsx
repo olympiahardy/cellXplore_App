@@ -54,7 +54,7 @@ function InteractionDataTable({ selections, onSavedSelectionsChange }) {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const response = await fetch("http://oh-cxg-dev.mvls.gla.ac.uk/breastcancer/data-table");
+      const response = await fetch("http://oh-cxg-dev.mvls.gla.ac.uk/braintbrucei/data-table");
       const fetchedData = await response.json();
       const dataWithIds = fetchedData.map((row, index) => ({
         id: index,
@@ -72,7 +72,7 @@ function InteractionDataTable({ selections, onSavedSelectionsChange }) {
     if (!selectedSelection) return;
     setLoading(true);
     try {
-      const response = await fetch("http://oh-cxg-dev.mvls.gla.ac.uk/breastcancer/filter-table", {
+      const response = await fetch("http://oh-cxg-dev.mvls.gla.ac.uk/braintbrucei/filter-table", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ selection_name: selectedSelection }),
@@ -92,7 +92,7 @@ function InteractionDataTable({ selections, onSavedSelectionsChange }) {
 
   useEffect(() => {
     const fetchSpatialGenes = async () => {
-      const res = await fetch("http://oh-cxg-dev.mvls.gla.ac.uk/breastcancer/spatial-genes");
+      const res = await fetch("http://oh-cxg-dev.mvls.gla.ac.uk/braintbrucei/spatial-genes");
       const genes = await res.json(); // assume it returns an array
       setSpatialGenes(genes);
     };

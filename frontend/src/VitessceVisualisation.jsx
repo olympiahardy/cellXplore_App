@@ -11,7 +11,7 @@ const VitessceVisualization = ({ onSelectionChange }) => {
 
   const fetchConfig = async () => {
     try {
-      const response = await fetch("http://oh-cxg-dev.mvls.gla.ac.uk/breastcancer/get_config");
+      const response = await fetch("http://oh-cxg-dev.mvls.gla.ac.uk/braintbrucei/get_config");
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
@@ -53,7 +53,7 @@ const VitessceVisualization = ({ onSelectionChange }) => {
   // Function to send all selections to Flask
   const sendSelectionsToBackend = async (selections) => {
     try {
-      const response = await fetch("http://oh-cxg-dev.mvls.gla.ac.uk/breastcancer/process_selections", {
+      const response = await fetch("http://oh-cxg-dev.mvls.gla.ac.uk/braintbrucei/process_selections", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -30,13 +30,13 @@ spatial_zarr_cache = None
 # Constants /Users/olympia/cellXplore_App/datasets/Xenium_proper_data.zarr
 # /Users/olympia/cellXplore_App/datasets/sc_FPPE_breast_cancer.zarr
 # Paths
-MERGED_ZARR_FILE = "sc_FPPE_breast_cancer.zarr"
-XENIUM_ZARR_FILE = "Xenium_proper_data.zarr"  # Xenium dataset
+MERGED_ZARR_FILE = "tbrucei_sc.zarr"
+XENIUM_ZARR_FILE = "naive_spatial.zarr"  # Visium dataset
 CONFIG_DIR = "/home/olympia/cellXplore_App/configs/"
 BASE_DIR = "/home/olympia/cellXplore_App/datasets/"
-SAMPLE_NAME = "Breast Cancer"  # Sample name
-DESCRIPTION = "High resolution mapping of the tumor microenvironment using integrated single-cell, spatial and in situ analysis. Janesick, A., Shelansky, R., Gottscho, A.D. et al. Nat Commun 14, 8353 (2023). https://doi.org/10.1038/s41467-023-43458-x"
-# DESCRIPTION = "Quintana, J.F., Chandrasegaran, P., Sinton, M.C. et al. Single cell and spatial transcriptomic analyses reveal microglia-plasma cell crosstalk in the brain during Trypanosoma brucei infection. Nat Commun 13, 5752 (2022). https://doi.org/10.1038/s41467-022-33542-z"
+SAMPLE_NAME = "T brucei"  # Sample name
+#DESCRIPTION = "High resolution mapping of the tumor microenvironment using integrated single-cell, spatial and in situ analysis. Janesick, A., Shelansky, R., Gottscho, A.D. et al. Nat Commun 14, 8353 (2023). https://doi.org/10.1038/s41467-023-43458-x"
+DESCRIPTION = "Quintana, J.F., Chandrasegaran, P., Sinton, M.C. et al. Single cell and spatial transcriptomic analyses reveal microglia-plasma cell crosstalk in the brain during Trypanosoma brucei infection. Nat Commun 13, 5752 (2022). https://doi.org/10.1038/s41467-022-33542-z"
 
 
 def load_cached_zarr():
@@ -62,58 +62,20 @@ def generate_config(
         # Initialize Vitessce Configuration
         vc = VitessceConfig(
             schema_version="1.0.17",
-            name="Breast Cancer Multi-Modal",
+            name="T brucei brain infection",
             description=description,
             base_dir=base_dir,
         )
 
         # # Single-Cell Dataset (scRNA-seq)
-        # sc_dataset = vc.add_dataset(name="Single-Cell RNA").add_object(
-        #     AnnDataWrapper(
-        #         adata_path=merged_zarr_file,
-        #         obs_feature_matrix_path="X",
-        #         obs_embedding_paths=["obsm/X_umap"],
-        #         obs_embedding_names=["UMAP"],
-        #         obs_set_paths=["obs/Cell_Subclusters", "obs/Infection_Status"],
-        #         obs_set_names=["Cell Type", "Infection Status"],
-        #         coordination_values={
-        #             "obsType": "cell",
-        #             "obsSetSelection": "obsSetSelectionScope",
-        #         },
-        #     )
-        # )
-
-        # # Xenium Spatial Dataset
-        # xenium_dataset = (
-        #     vc.add_dataset(name="Xenium Spatial")
-        #     .add_object(
-        #         SpatialDataWrapper(
-        #             sdata_path=xenium_zarr_file,  # Path to Xenium dataset
-        #             image_path="images/naive_lowres_image",  # Adjust this based on your Zarr file structure
-        #             obs_feature_matrix_path="tables/table/X",  # Adjust this based on Xenium data
-        #             obs_set_paths=[
-        #                 "tables/table/obs/brain_region",
-        #                 "tables/table/obs/cell_type",
-        #             ],  # Cluster annotations
-        #             obs_set_names=["Brain Region", "Cell Type"],
-        #             obs_spots_path="shapes/naive",
-        #             coordination_values={
-        #                 "obsType": "spot",
-        #                 "obsSetSelection": "obsSetSelectionScope",
-        #             },
-        #         )
-        #     )
-        # )
-
-        # Single-Cell Dataset (scRNA-seq)
         sc_dataset = vc.add_dataset(name="Single-Cell RNA").add_object(
             AnnDataWrapper(
                 adata_path=merged_zarr_file,
                 obs_feature_matrix_path="X",
                 obs_embedding_paths=["obsm/X_umap"],
                 obs_embedding_names=["UMAP"],
-                obs_set_paths=["obs/clusters", "obs/Cell_Type"],
-                obs_set_names=["Clusters", "Cell Type"],
+                obs_set_paths=["obs/Cell_Subclusters", "obs/Infection_Status"],
+                obs_set_names=["Cell Type", "Infection Status"],
                 coordination_values={
                     "obsType": "cell",
                     "obsSetSelection": "obsSetSelectionScope",
@@ -122,23 +84,61 @@ def generate_config(
         )
 
         # Xenium Spatial Dataset
-        xenium_dataset = vc.add_dataset(name="Xenium Spatial").add_object(
-            SpatialDataWrapper(
-                sdata_path=xenium_zarr_file,  # Path to Xenium dataset
-                image_path="images/morphology_focus",  # Adjust this based on your Zarr file structure
-                obs_feature_matrix_path="tables/table/X",  # Adjust this based on Xenium data
-                obs_set_paths=[
-                    "tables/table/obs/leiden",
-                    "tables/table/obs/clusters",
-                ],  # Cluster annotations
-                obs_set_names=["Clusters", "Cell Type"],
-                obs_spots_path="shapes/cell_circles",
-                coordination_values={
-                    "obsType": "spot",
-                    "obsSetSelection": "obsSetSelectionScope",
-                },
+        xenium_dataset = (
+            vc.add_dataset(name="Xenium Spatial")
+            .add_object(
+                SpatialDataWrapper(
+                    sdata_path=xenium_zarr_file,  # Path to Xenium dataset
+                    image_path="images/naive_lowres_image",  # Adjust this based on your Zarr file structure
+                    obs_feature_matrix_path="tables/table/X",  # Adjust this based on Xenium data
+                    obs_set_paths=[
+                        "tables/table/obs/brain_region",
+                        "tables/table/obs/cell_type",
+                    ],  # Cluster annotations
+                    obs_set_names=["Brain Region", "Cell Type"],
+                    obs_spots_path="shapes/naive",
+                    coordination_values={
+                        "obsType": "spot",
+                        "obsSetSelection": "obsSetSelectionScope",
+                    },
+                )
             )
         )
+
+        # Single-Cell Dataset (scRNA-seq)
+        # sc_dataset = vc.add_dataset(name="Single-Cell RNA").add_object(
+        #     AnnDataWrapper(
+        #         adata_path=merged_zarr_file,
+        #         obs_feature_matrix_path="X",
+        #         obs_embedding_paths=["obsm/X_umap"],
+        #         obs_embedding_names=["UMAP"],
+        #         obs_set_paths=["obs/clusters", "obs/Cell_Type"],
+        #         obs_set_names=["Clusters", "Cell Type"],
+        #         coordination_values={
+        #             "obsType": "cell",
+        #             "obsSetSelection": "obsSetSelectionScope",
+        #         },
+        #     )
+        # )
+
+        # Xenium Spatial Dataset
+        # xenium_dataset = vc.add_dataset(name="Xenium Spatial").add_object(
+        #     SpatialDataWrapper(
+        #         sdata_path=xenium_zarr_file,  # Path to Xenium dataset
+        #         image_path="images/morphology_focus",  # Adjust this based on your Zarr file structure
+        #         obs_feature_matrix_path="tables/table/X",  # Adjust this based on Xenium data
+        #         obs_set_paths=[
+        #             "tables/table/obs/leiden",
+        #             "tables/table/obs/clusters",
+        #         ],  # Cluster annotations
+        #         obs_set_names=["Clusters", "Cell Type"],
+        #         obs_spots_path="shapes/cell_circles",
+        #         coordination_values={
+        #             "obsType": "spot",
+        #             "obsSetSelection": "obsSetSelectionScope",
+        #         },
+        #     )
+        # )
 
         spatial_view = vc.add_view(
             "spatialBeta", dataset=xenium_dataset, x=0.0, y=6.0, w=6.0, h=6.0
@@ -240,7 +240,7 @@ def get_config():
         return jsonify({"error": str(e)}), 500
 
 
-def generate_dual_scatter_config(xenium_zarr_file, output_dir, base_dir):
+def generate_dual_scatter_config(xenium_zarr_file, output_dir, base_dir, sample):
     try:
         os.makedirs(output_dir, exist_ok=True)
 
@@ -251,33 +251,17 @@ def generate_dual_scatter_config(xenium_zarr_file, output_dir, base_dir):
             base_dir=base_dir,
         )
 
-        # xenium_dataset_1 = vc.add_dataset(name="Xenium Spatial").add_object(
-        #     SpatialDataWrapper(
-        #         sdata_path=xenium_zarr_file,  # Path to Xenium dataset
-        #         image_path="images/naive_lowres_image",  # Adjust this based on your Zarr file structure
-        #         obs_feature_matrix_path="tables/table/X",  # Adjust this based on Xenium data
-        #         obs_set_paths=[
-        #             "tables/table/obs/brain_region",
-        #             "tables/table/obs/cell_type",
-        #         ],  # Cluster annotations
-        #         obs_set_names=["Clusters", "Cell Type"],
-        #         obs_spots_path="shapes/naive",
-        #         coordination_values={
-        #             "obsType": "spot",
-        #             "obsSetSelection": "obsSetSelectionScope",
-        #         },
-        #     )
-        # )
-
-        # Xenium Spatial Dataset
         xenium_dataset_1 = vc.add_dataset(name="Xenium Spatial").add_object(
             SpatialDataWrapper(
                 sdata_path=xenium_zarr_file,  # Path to Xenium dataset
-                # image_path="images/morphology_focus",  # Adjust this based on your Zarr file structure
+                image_path="images/naive_lowres_image",  # Adjust this based on your Zarr file structure
                 obs_feature_matrix_path="tables/table/X",  # Adjust this based on Xenium data
-                obs_set_paths=["tables/table/obs/clusters"],  # Cluster annotations
-                obs_set_names=["Cell Type"],
-                obs_spots_path="shapes/cell_circles",
+                obs_set_paths=[
+                    "tables/table/obs/brain_region",
+                    "tables/table/obs/cell_type",
+                ],  # Cluster annotations
+                obs_set_names=["Clusters", "Cell Type"],
+                obs_spots_path="shapes/naive",
                 coordination_values={
                     "obsType": "spot",
                     "obsSetSelection": "obsSetSelectionScope",
@@ -285,17 +269,15 @@ def generate_dual_scatter_config(xenium_zarr_file, output_dir, base_dir):
             )
         )
 
-        # xenium_dataset_2 = vc.add_dataset(name="Xenium Spatial").add_object(
+        # Xenium Spatial Dataset
+        # xenium_dataset_1 = vc.add_dataset(name="Xenium Spatial").add_object(
         #     SpatialDataWrapper(
         #         sdata_path=xenium_zarr_file,  # Path to Xenium dataset
-        #         image_path="images/naive_lowres_image",  # Adjust this based on your Zarr file structure
+        #         # image_path="images/morphology_focus",  # Adjust this based on your Zarr file structure
         #         obs_feature_matrix_path="tables/table/X",  # Adjust this based on Xenium data
-        #         obs_set_paths=[
-        #             "tables/table/obs/brain_region",
-        #             "tables/table/obs/cell_type",
-        #         ],  # Cluster annotations
-        #         obs_set_names=["Clusters", "Cell Type"],
-        #         obs_spots_path="shapes/naive",
+        #         obs_set_paths=["tables/table/obs/clusters"],  # Cluster annotations
+        #         obs_set_names=["Cell Type"],
+        #         obs_spots_path="shapes/cell_circles",
         #         coordination_values={
         #             "obsType": "spot",
         #             "obsSetSelection": "obsSetSelectionScope",
@@ -303,21 +285,39 @@ def generate_dual_scatter_config(xenium_zarr_file, output_dir, base_dir):
         #     )
         # )
 
-        # Xenium Spatial Dataset
         xenium_dataset_2 = vc.add_dataset(name="Xenium Spatial").add_object(
             SpatialDataWrapper(
                 sdata_path=xenium_zarr_file,  # Path to Xenium dataset
-                # image_path="images/morphology_focus",  # Adjust this based on your Zarr file structure
+                image_path="images/naive_lowres_image",  # Adjust this based on your Zarr file structure
                 obs_feature_matrix_path="tables/table/X",  # Adjust this based on Xenium data
-                obs_set_paths=["tables/table/obs/clusters"],  # Cluster annotations
-                obs_set_names=["Cell Type"],
-                obs_spots_path="shapes/cell_circles",
+                obs_set_paths=[
+                    "tables/table/obs/brain_region",
+                    "tables/table/obs/cell_type",
+                ],  # Cluster annotations
+                obs_set_names=["Clusters", "Cell Type"],
+                obs_spots_path="shapes/naive",
                 coordination_values={
                     "obsType": "spot",
                     "obsSetSelection": "obsSetSelectionScope",
                 },
             )
         )
+
+        # Xenium Spatial Dataset
+        # xenium_dataset_2 = vc.add_dataset(name="Xenium Spatial").add_object(
+        #     SpatialDataWrapper(
+        #         sdata_path=xenium_zarr_file,  # Path to Xenium dataset
+        #         # image_path="images/morphology_focus",  # Adjust this based on your Zarr file structure
+        #         obs_feature_matrix_path="tables/table/X",  # Adjust this based on Xenium data
+        #         obs_set_paths=["tables/table/obs/clusters"],  # Cluster annotations
+        #         obs_set_names=["Cell Type"],
+        #         obs_spots_path="shapes/cell_circles",
+        #         coordination_values={
+        #             "obsType": "spot",
+        #             "obsSetSelection": "obsSetSelectionScope",
+        #         },
+        #     )
+        # )
 
         spatial_view_1 = vc.add_view(
             "spatialBeta",
@@ -378,7 +378,7 @@ def generate_dual_scatter_config(xenium_zarr_file, output_dir, base_dir):
         config_dict = vc.to_dict(
             base_url="http://oh-cxg-dev.mvls.gla.ac.uk/datasets"
         )  # config_dict = vc.to_dict(base_url="http://127.0.0.1:5000/datasets")
-        output_path = os.path.join(output_dir, "dual_sc.json")
+        output_path = os.path.join(output_dir, f"{sample}_dual_sc.json")
         with open(output_path, "w") as json_file:
             json.dump(config_dict, json_file, indent=4)
 
@@ -390,13 +390,13 @@ def generate_dual_scatter_config(xenium_zarr_file, output_dir, base_dir):
 
 
 # Generate config with both datasets
-generate_dual_scatter_config(XENIUM_ZARR_FILE, CONFIG_DIR, BASE_DIR)
+generate_dual_scatter_config(XENIUM_ZARR_FILE, CONFIG_DIR, BASE_DIR, SAMPLE_NAME)
 
 
 @app.route("/get_dual_config", methods=["GET"])
 def get_dual_config():
     try:
-        config_path = os.path.join(CONFIG_DIR, "dual_sc.json")
+        config_path = os.path.join(CONFIG_DIR, f"{SAMPLE_NAME}_dual_sc.json")
         if not os.path.exists(config_path):
             return jsonify({"error": "Configuration file not found"}), 404
 
@@ -792,4 +792,4 @@ def serve_datasets(filename):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0", port=5001)

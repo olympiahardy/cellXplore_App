@@ -98,7 +98,7 @@ function StackedProportionBarplot() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch("http://oh-cxg-dev.mvls.gla.ac.uk/breastcancer/prop-freq");
+        const response = await fetch("http://oh-cxg-dev.mvls.gla.ac.uk/braintbrucei/prop-freq");
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }

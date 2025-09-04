@@ -1,0 +1,184 @@
+{
+    "version": "1.0.17",
+    "name": "Breast Cancer Multi-Modal",
+    "description": "",
+    "datasets": [
+        {
+            "uid": "A",
+            "name": "Xenium Spatial",
+            "files": [
+                {
+                    "fileType": "spatialdata.zarr",
+                    "url": "http://oh-cxg-dev.mvls.gla.ac.uk/datasets/naive_spatial.zarr",
+                    "options": {
+                        "obsFeatureMatrix": {
+                            "path": "tables/table/X"
+                        },
+                        "obsSets": {
+                            "obsSets": [
+                                {
+                                    "name": "Clusters",
+                                    "path": "tables/table/obs/brain_region"
+                                },
+                                {
+                                    "name": "Cell Type",
+                                    "path": "tables/table/obs/cell_type"
+                                }
+                            ],
+                            "tablePath": "tables/table"
+                        },
+                        "obsSpots": {
+                            "path": "shapes/naive",
+                            "tablePath": "tables/table"
+                        },
+                        "image": {
+                            "path": "images/naive_lowres_image"
+                        }
+                    },
+                    "coordinationValues": {
+                        "obsType": "spot",
+                        "obsSetSelection": "obsSetSelectionScope"
+                    }
+                }
+            ]
+        },
+        {
+            "uid": "B",
+            "name": "Xenium Spatial",
+            "files": [
+                {
+                    "fileType": "spatialdata.zarr",
+                    "url": "http://oh-cxg-dev.mvls.gla.ac.uk/datasets/naive_spatial.zarr",
+                    "options": {
+                        "obsFeatureMatrix": {
+                            "path": "tables/table/X"
+                        },
+                        "obsSets": {
+                            "obsSets": [
+                                {
+                                    "name": "Clusters",
+                                    "path": "tables/table/obs/brain_region"
+                                },
+                                {
+                                    "name": "Cell Type",
+                                    "path": "tables/table/obs/cell_type"
+                                }
+                            ],
+                            "tablePath": "tables/table"
+                        },
+                        "obsSpots": {
+                            "path": "shapes/naive",
+                            "tablePath": "tables/table"
+                        },
+                        "image": {
+                            "path": "images/naive_lowres_image"
+                        }
+                    },
+                    "coordinationValues": {
+                        "obsType": "spot",
+                        "obsSetSelection": "obsSetSelectionScope"
+                    }
+                }
+            ]
+        }
+    ],
+    "coordinationSpace": {
+        "dataset": {
+            "A": "A",
+            "B": "B"
+        },
+        "obsType": {
+            "A": "spot",
+            "B": "spot"
+        },
+        "obsSetSelection": {
+            "A": [],
+            "B": []
+        },
+        "featureSelection": {
+            "A": null,
+            "B": null
+        }
+    },
+    "layout": [
+        {
+            "component": "spatialBeta",
+            "coordinationScopes": {
+                "dataset": "A",
+                "obsType": "A",
+                "obsSetSelection": "A",
+                "featureSelection": "A"
+            },
+            "x": 0.0,
+            "y": 0.0,
+            "w": 9.0,
+            "h": 6.0
+        },
+        {
+            "component": "spatialBeta",
+            "coordinationScopes": {
+                "dataset": "B",
+                "obsType": "B",
+                "obsSetSelection": "B",
+                "featureSelection": "B"
+            },
+            "x": 0.0,
+            "y": 6.0,
+            "w": 9.0,
+            "h": 6.0
+        },
+        {
+            "component": "featureList",
+            "coordinationScopes": {
+                "dataset": "A",
+                "obsType": "A",
+                "obsSetSelection": "A",
+                "featureSelection": "A"
+            },
+            "x": 9.0,
+            "y": 0.0,
+            "w": 3.0,
+            "h": 4.0
+        },
+        {
+            "component": "featureList",
+            "coordinationScopes": {
+                "dataset": "B",
+                "obsType": "B",
+                "obsSetSelection": "B",
+                "featureSelection": "B"
+            },
+            "x": 9.0,
+            "y": 10.0,
+            "w": 3.0,
+            "h": 4.0
+        },
+        {
+            "component": "layerControllerBeta",
+            "coordinationScopes": {
+                "dataset": "A",
+                "obsType": "A",
+                "obsSetSelection": "A",
+                "featureSelection": "A"
+            },
+            "x": 9.0,
+            "y": 4.0,
+            "w": 3.0,
+            "h": 2.0
+        },
+        {
+            "component": "layerControllerBeta",
+            "coordinationScopes": {
+                "dataset": "B",
+                "obsType": "B",
+                "obsSetSelection": "B",
+                "featureSelection": "B"
+            },
+            "x": 9.0,
+            "y": 10.0,
+            "w": 3.0,
+            "h": 2.0
+        }
+    ],
+    "initStrategy": "auto"
+}

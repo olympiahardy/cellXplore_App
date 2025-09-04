@@ -1,0 +1,234 @@
+{
+    "version": "1.0.17",
+    "name": "T brucei brain infection",
+    "description": "Quintana, J.F., Chandrasegaran, P., Sinton, M.C. et al. Single cell and spatial transcriptomic analyses reveal microglia-plasma cell crosstalk in the brain during Trypanosoma brucei infection. Nat Commun 13, 5752 (2022). https://doi.org/10.1038/s41467-022-33542-z",
+    "datasets": [
+        {
+            "uid": "A",
+            "name": "Single-Cell RNA",
+            "files": [
+                {
+                    "fileType": "anndata.zarr",
+                    "url": "http://oh-cxg-dev.mvls.gla.ac.uk/datasets/tbrucei_sc.zarr",
+                    "options": {
+                        "obsEmbedding": [
+                            {
+                                "path": "obsm/X_umap",
+                                "dims": [
+                                    0,
+                                    1
+                                ],
+                                "embeddingType": "UMAP"
+                            }
+                        ],
+                        "obsSets": [
+                            {
+                                "name": "Cell Type",
+                                "path": "obs/Cell_Subclusters"
+                            },
+                            {
+                                "name": "Infection Status",
+                                "path": "obs/Infection_Status"
+                            }
+                        ],
+                        "obsFeatureMatrix": {
+                            "path": "X"
+                        }
+                    },
+                    "coordinationValues": {
+                        "obsType": "cell",
+                        "obsSetSelection": "obsSetSelectionScope"
+                    }
+                }
+            ]
+        },
+        {
+            "uid": "B",
+            "name": "Xenium Spatial",
+            "files": [
+                {
+                    "fileType": "spatialdata.zarr",
+                    "url": "http://oh-cxg-dev.mvls.gla.ac.uk/datasets/naive_spatial.zarr",
+                    "options": {
+                        "obsFeatureMatrix": {
+                            "path": "tables/table/X"
+                        },
+                        "obsSets": {
+                            "obsSets": [
+                                {
+                                    "name": "Brain Region",
+                                    "path": "tables/table/obs/brain_region"
+                                },
+                                {
+                                    "name": "Cell Type",
+                                    "path": "tables/table/obs/cell_type"
+                                }
+                            ],
+                            "tablePath": "tables/table"
+                        },
+                        "obsSpots": {
+                            "path": "shapes/naive",
+                            "tablePath": "tables/table"
+                        },
+                        "image": {
+                            "path": "images/naive_lowres_image"
+                        }
+                    },
+                    "coordinationValues": {
+                        "obsType": "spot",
+                        "obsSetSelection": "obsSetSelectionScope"
+                    }
+                }
+            ]
+        }
+    ],
+    "coordinationSpace": {
+        "dataset": {
+            "A": "A",
+            "B": "B"
+        },
+        "imageLayer": {
+            "init_B_image_0": "__dummy__"
+        },
+        "photometricInterpretation": {
+            "init_B_image_0": "RGB"
+        },
+        "metaCoordinationScopes": {
+            "init_B_image_0": {
+                "imageLayer": [
+                    "init_B_image_0"
+                ]
+            }
+        },
+        "metaCoordinationScopesBy": {
+            "init_B_image_0": {
+                "imageLayer": {
+                    "photometricInterpretation": {
+                        "init_B_image_0": "init_B_image_0"
+                    }
+                }
+            }
+        },
+        "embeddingType": {
+            "A": "UMAP"
+        },
+        "obsType": {
+            "A": "cell",
+            "B": "spot"
+        },
+        "obsSetSelection": {
+            "A": [],
+            "B": []
+        }
+    },
+    "layout": [
+        {
+            "component": "spatialBeta",
+            "coordinationScopes": {
+                "dataset": "B",
+                "metaCoordinationScopes": [
+                    "init_B_image_0"
+                ],
+                "metaCoordinationScopesBy": [
+                    "init_B_image_0"
+                ],
+                "obsType": "B",
+                "obsSetSelection": "B"
+            },
+            "x": 0.0,
+            "y": 6.0,
+            "w": 6.0,
+            "h": 6.0
+        },
+        {
+            "component": "layerControllerBeta",
+            "coordinationScopes": {
+                "dataset": "B",
+                "metaCoordinationScopes": [
+                    "init_B_image_0"
+                ],
+                "metaCoordinationScopesBy": [
+                    "init_B_image_0"
+                ],
+                "obsType": "B",
+                "obsSetSelection": "B"
+            },
+            "x": 6.0,
+            "y": 6.0,
+            "w": 3.0,
+            "h": 3.0
+        },
+        {
+            "component": "featureList",
+            "coordinationScopes": {
+                "dataset": "B",
+                "obsType": "B",
+                "obsSetSelection": "B"
+            },
+            "x": 9.0,
+            "y": 6.0,
+            "w": 3.0,
+            "h": 3.0
+        },
+        {
+            "component": "obsSets",
+            "coordinationScopes": {
+                "dataset": "B",
+                "obsType": "B",
+                "obsSetSelection": "B"
+            },
+            "x": 6.0,
+            "y": 3.0,
+            "w": 3.0,
+            "h": 3.0
+        },
+        {
+            "component": "scatterplot",
+            "coordinationScopes": {
+                "dataset": "A",
+                "embeddingType": "A",
+                "obsType": "A",
+                "obsSetSelection": "A"
+            },
+            "x": 0.0,
+            "y": 0.0,
+            "w": 6.0,
+            "h": 6.0
+        },
+        {
+            "component": "obsSets",
+            "coordinationScopes": {
+                "dataset": "A",
+                "obsType": "A",
+                "obsSetSelection": "A"
+            },
+            "x": 6.0,
+            "y": 0.0,
+            "w": 3.0,
+            "h": 4.0
+        },
+        {
+            "component": "featureList",
+            "coordinationScopes": {
+                "dataset": "A",
+                "obsType": "A",
+                "obsSetSelection": "A"
+            },
+            "x": 9.0,
+            "y": 0.0,
+            "w": 3.0,
+            "h": 4.0
+        },
+        {
+            "component": "description",
+            "coordinationScopes": {
+                "dataset": "B"
+            },
+            "x": 9.0,
+            "y": 6.0,
+            "w": 3.0,
+            "h": 3.0
+        }
+    ],
+    "initStrategy": "auto"
+}
