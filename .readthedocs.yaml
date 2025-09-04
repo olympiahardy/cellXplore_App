@@ -14,8 +14,9 @@ build:
 sphinx:
    configuration: docs/source/conf.py 
 
-conda:
-  environment: environment.yml
+python:
+  install:
+    - requirements: docs/requirements.txt
 
 # Optionally, but recommended,
 # declare the Python requirements required to build your documentation
