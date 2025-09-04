@@ -1,0 +1,199 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Single Cell View &mdash; cellXplore 1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+    <link rel="shortcut icon" href="_static/cellXplore.png"/>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=f2a433a1"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Interaction Table" href="Interaction-Table.html" />
+    <link rel="prev" title="Getting Started" href="Getting-Started.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            cellXplore
+              <img src="_static/cellXplore.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">📘 Table of Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="What-is-CellXplore.html">What is cellXplore?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Getting-Started.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Single Cell View</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#explore-data-using-metadata-or-gene-expression">Explore data using metadata or gene expression</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#cell-sets">Cell Sets</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#gene-list">Gene List</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#spatial-view">Spatial View</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#image-layer">Image layer</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#creating-selections-of-cell-sets">Creating selections of cell sets</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#subsetting-by-metadata">Subsetting by metadata</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#subsetting-by-lasso-selection">Subsetting by lasso selection</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Interaction-Table.html">Interaction Table</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Bubble-Plot.html">Bubble Plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Circos-Plot.html">Circos Plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Frequency-Heatmap.html">Heatmap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Pathway-Proportion.html">Pathway Proportion Plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Dual-Gene-Viewer.html">Ligand-Receptor Search</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Tips-and-Troubleshooting.html">Tips &amp; Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Citation.html">Citation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">cellXplore</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Single Cell View</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/Vitessce-Viewer.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="single-cell-view">
+<h1>Single Cell View<a class="headerlink" href="#single-cell-view" title="Link to this heading"></a></h1>
+<p>This tab allows the user to explore and visualise their single cell or spatial data. Using visualisation components from the Vitessce library you can visualise both modalities of data side by side. The single cell data is projected in the UMAP embedding space with the spatial data projected as a spot level mask overlaid on the histological image where available.</p>
+<p><img alt="View on load" src="_images/view_on_load.png" /></p>
+<section id="explore-data-using-metadata-or-gene-expression">
+<h2>Explore data using metadata or gene expression<a class="headerlink" href="#explore-data-using-metadata-or-gene-expression" title="Link to this heading"></a></h2>
+<p>The user can visualise their data with any available categorical metadata such as leiden cluster or annotated cell type in both their single cell and spatial data. For further downstream tasks the user <em>must ensure that cell type annotation labels are harmonised</em> across both datasets.</p>
+<p><img alt="Colour by metadata" src="_images/colour_by_metadata.png" /></p>
+<section id="cell-sets">
+<h3>Cell Sets<a class="headerlink" href="#cell-sets" title="Link to this heading"></a></h3>
+<p>The Cell Sets component contains all the categorical metadata associated with your single cell data, categories can be expanded by clicking the dropdown arrow to see all labels. By clicking the highest level toggle button users can visualise all cells by a given metadata variable. Individual or multiple categories of cells can be highlighted by either clicking the label text or by clicking the lower level toggle buttons next to each label, selections can be removed by again clicking on the toggles/labels. Similarly the same may also be done for the spatial view using the Spot Sets component that is located adjacent to the spatial data viewer.</p>
+<p>NB: This may be slow for larger datasets, or categories.</p>
+<p><img alt="Using cell sets" src="_images/cell_sets.png" /></p>
+</section>
+<section id="gene-list">
+<h3>Gene List<a class="headerlink" href="#gene-list" title="Link to this heading"></a></h3>
+<p>The Gene List component contains all the genes available in the expression matrix of the single cell data. By clicking a gene the UMAP component will highlight the genes expression across all cells in the dataset. The user can also search for a given gene using the search bar at the top of the component.</p>
+<p><img alt="Colour by gene" src="_images/colour_by_gene.png" /></p>
+<p>Genes can be ordered by their appearance in the matrix or alphabetically and where alternative IDs are available the user can toggle whether to sort by or display these instead of the original gene IDs. Similarly the same can also be done in the spatial data using the Gene List component adjacent to the spatial data.</p>
+<p><img alt="Using gene list" src="_images/gene_list.png" /></p>
+<p>NB: Genes present in the single cell data that are absent in the spatial data still colour by gene expression in the spatial view, fix is pending.</p>
+</section>
+</section>
+<section id="spatial-view">
+<h2>Spatial View<a class="headerlink" href="#spatial-view" title="Link to this heading"></a></h2>
+<p>The spatial view allows users to explore their spatial data on the spot or image level where available. As mentioned above you can colour your spatial data with metadata variables or by gene expression. The spatial view has an additional level of control provided by the Spatial Layers component. This component allows users to show/hide the spot level mask or histological image where available as well as sliders to adjust the opaicity of each layer. By default the viewer initally shows both the spots and image with the image contrast set to 0 so that the spots are visualised more clearly.</p>
+<section id="image-layer">
+<h3>Image layer<a class="headerlink" href="#image-layer" title="Link to this heading"></a></h3>
+<p>To adjust the contrast of the image layer, it may help to hide the spot mask so it doesn’t interfere with our settings. To do this we can hide the spot layer by clicking the eye icon, then we can click the 3 dots to open the image settings.</p>
+<p><img alt="Hiding spot layer" src="_images/hiding_spot_layer.png" /></p>
+<p>Here we can set the ‘Photometeric Interpretation’ to ‘BlackIsZero’ and we see that we now have a channel that has appeared. Now if we collapse the menu by clicking on the 3 dots again we can adjust the intesity of the colours by moving the right slider closer to the left slider to acheive the desired contrast. This is set to blue by default and can be changed by clicking the solid blue box next to the channel where the user can select their desired colour.</p>
+<p><img alt="Hiding spot layer" src="_images/hiding_spot_layer.png" /></p>
+<p>We can also set this to use a colour map instead of a solid colour by clicking on the 3 dots next to the image layer slider and selecting a colour map.</p>
+<p><img alt="Colour map" src="_images/colour_map_image.png" /></p>
+<p>If you zoom in you can clearly see the intensity staining from the image with the colour map overlaid. Now if you retoggle the spot layer we can clearly see the spot mask overlaid on the image.</p>
+<p><img alt="Spots and image" src="_images/spot_overlaid_image.png" /></p>
+</section>
+</section>
+<section id="creating-selections-of-cell-sets">
+<h2>Creating selections of cell sets<a class="headerlink" href="#creating-selections-of-cell-sets" title="Link to this heading"></a></h2>
+<p>You can also subset specific cell populations of interest using the Cell Sets component that is linked to the single cell viewer. Any selections made will be stored under ‘My Selections’ that will appear in the Cell Sets component.</p>
+<section id="subsetting-by-metadata">
+<h3>Subsetting by metadata<a class="headerlink" href="#subsetting-by-metadata" title="Link to this heading"></a></h3>
+<p>Cell populations can also be saved as a selection based on their metadata in the Cell Sets component. For this functionality click using the toggle buttons next to each label in the Cell Sets view, selected cells will be highlighted in the UMAP. Once the cell populations of interest are selected the user can save the selection in three distinct ways:</p>
+<ul class="simple">
+<li><p><strong>Union:</strong> This will take the union of all selected metadata variables.</p></li>
+<li><p><strong>Difference:</strong> This will take all the cell populations that are outside the selection.</p></li>
+<li><p><strong>Intersection:</strong> This will take the intersection of all selected populations. This is more powerful when used with lasso selections rather than metadata selections.</p></li>
+</ul>
+<p><img alt="Different joins" src="_images/different_joins.png" /></p>
+<p>Cell populations of interest that appear under ‘My Selections’ can also be used to create new selections using the three functions above. Simply select selections of interest and click on one of the three joins to create a new selection.</p>
+<p><img alt="Creating selections" src="_images/how_to_join_selections.png" /></p>
+<p>By clicking on the 3 dots next to each selection you can rename the population of interest, change their colour, delete, highlight, or export them to a JSON or CSV file. These cell set selections will be stored and carried over to other visualisations in the tool to explore cell-cell interactions.</p>
+<p><img alt="Manipulating selections" src="_images/how_to_rename_save_selections.png" /></p>
+<p>NB: Selections must be made in the single cell viewer, so if you are interested in cell types that localise in the spatial view please explore these seperately first and then create the selection in the single cell view. This is due to how the tool handles cell barcodes associated to the cellular interaction data that is inferred from the single cell data. Functionality extending creating selections from the spatial data to communicate with the interaction data is coming.</p>
+</section>
+<section id="subsetting-by-lasso-selection">
+<h3>Subsetting by lasso selection<a class="headerlink" href="#subsetting-by-lasso-selection" title="Link to this heading"></a></h3>
+<p>Cell populations can be saved as a selection by using a convenient lasso function in the UMAP component in the single cell view. By selecting the lasso tool, the user can click and drag a selection of cells which can be saved and passed to other plotting tabs. Once the lasso selection is complete the selected cells will be highlighted and the subset will appear in the Cell Sets component under Selections. To create another lasso selection you only need to select another population of interest and these will all be saved under ‘My Selections’ in the Cell Set component.</p>
+<p><img alt="Lasso selections" src="_images/lasso_selection.png" /></p>
+<p>NB: Larger selections may be slower to load so please be patient until the selection appears under ‘My Selections’.</p>
+<p>Now we have explored our single cell and spatial data, created selections of populations of interest and can now carry these over to the plotting tabs to visualise some cellular interactions.</p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Getting-Started.html" class="btn btn-neutral float-left" title="Getting Started" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Interaction-Table.html" class="btn btn-neutral float-right" title="Interaction Table" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Olympia Hardy.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

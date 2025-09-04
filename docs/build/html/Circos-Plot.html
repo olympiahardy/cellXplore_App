@@ -1,0 +1,141 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Circos Plot &mdash; cellXplore 1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+    <link rel="shortcut icon" href="_static/cellXplore.png"/>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=f2a433a1"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Heatmap" href="Frequency-Heatmap.html" />
+    <link rel="prev" title="Bubble Plot" href="Bubble-Plot.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            cellXplore
+              <img src="_static/cellXplore.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">📘 Table of Contents</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="What-is-CellXplore.html">What is cellXplore?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Getting-Started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Vitessce-Viewer.html">Single Cell View</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Interaction-Table.html">Interaction Table</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Bubble-Plot.html">Bubble Plot</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Circos Plot</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#plotting-single-cell-view-table-row-selections">Plotting Single Cell View/Table row selections</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Frequency-Heatmap.html">Heatmap</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Pathway-Proportion.html">Pathway Proportion Plot</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Dual-Gene-Viewer.html">Ligand-Receptor Search</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Tips-and-Troubleshooting.html">Tips &amp; Troubleshooting</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Citation.html">Citation</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">cellXplore</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Circos Plot</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/Circos-Plot.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="circos-plot">
+<h1>Circos Plot<a class="headerlink" href="#circos-plot" title="Link to this heading"></a></h1>
+<p>A circos plot is another way for us to visualise interacting cell types of interest. Here we each segment represents a source cell type (i.e. expressing ligand) that is received by a target cell type. The chords of the circos plot represent the directionality of the interaction and are coloured by the target cell type, the thickness is showing the aggregated probability of the interactions.</p>
+<p>In the side bar select your sources and targets of interest and the plot will automatically update with your selections.</p>
+<p><img alt="Circos sidebar" src="_images/circos_sidebar.png" /></p>
+<p>You can also hover over chords to see additional information such as:
+- The source cell type
+- The target cell type
+- The aggregated probability of the interactions
+- The total number of interactions
+- The top 10 strongest ligand-receptor pairs</p>
+<p><img alt="Circos hovertip" src="_images/circos_hovertip.png" /></p>
+<section id="plotting-single-cell-view-table-row-selections">
+<h2>Plotting Single Cell View/Table row selections<a class="headerlink" href="#plotting-single-cell-view-table-row-selections" title="Link to this heading"></a></h2>
+<p>At the top of the sidebar we can also pass our previous selections we made in the Single Cell View tab and Interactions Table tab by using the dropdown menu. Once you have selected a value from the dropdown menu and click ‘Apply Filter’ the source and target cell type values will be limited to only those that appear in your selections, allowing you to plot your cell types of interest.</p>
+<p><img alt="Circos sidebar selections" src="_images/circos_sidebar_selections.png" /></p>
+<p>You can also export the circos plot as a PDF by clicking the ‘Save as PDF’ button in the sidebar.</p>
+<p>NB: The plot area is large for the circos plot so it is best once your selections have been made in the sidebar that you scroll over to view the whole plotting area, this also avoids the hover boxes being cut out of view.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Bubble-Plot.html" class="btn btn-neutral float-left" title="Bubble Plot" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Frequency-Heatmap.html" class="btn btn-neutral float-right" title="Heatmap" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Olympia Hardy.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
