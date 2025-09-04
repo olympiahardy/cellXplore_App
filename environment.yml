@@ -25,6 +25,7 @@ dependencies:
   - libsqlite=3.46.1
   - libzlib=1.3.1
   - matplotlib-inline=0.1.7
+  - myst-parser 
   - ncurses=6.5
   - nest-asyncio=1.6.0
   - openssl=3.3.2
@@ -44,6 +45,8 @@ dependencies:
   - readline=8.2
   - setuptools=75.1.0
   - six=1.16.0
+  - sphinx
+  - sphinx-rtd-theme
   - stack_data=0.6.2
   - tk=8.6.13
   - tornado=6.4.1
